@@ -1,4 +1,4 @@
-# Purfling Cutter — Design Spec (v0.4)
+# Purfling Cutter — Design Spec (v0.5)
 
 A 3D-printed jig that holds a Dremel rotary tool over a stringed-instrument
 top so a cutter bit can rout a constant-distance channel from the edge,
@@ -9,20 +9,20 @@ names below match constants in the source.
 
 ## Parts
 
-Three printed parts plus a sourced bearing, an M4 bolt and an M4 hex nut.
-Standoffs that connect shoe to plate are **not yet designed** and remain out
-of scope here.
+Four printed parts plus a sourced bearing, an M4 bolt, an M4 hex nut, and
+two M6 flat-head bolts.
 
 | Part            | Function                                                                 | Source                  |
 |-----------------|--------------------------------------------------------------------------|-------------------------|
-| `plate`         | Holds the Dremel via a 3/4"-12 UN internal thread.                       | `build_plate()`         |
-| `shoe`          | Stadium-shaped body sitting flat on the work (z=0–SHOE_T). Front (surround) region is cut to a half-stadium snout (flat back, Ø16 semicircular front, 4 mm tall) — the only contact patch. Houses the bit hole, the stadium-shaped bearing slot, and standoff bolt holes. | `build_shoe()` |
-| `upper_sleeve`  | Drops into the shoe slot from above (Stem 1 + top flange); top flange carries the captive M4 hex nut (drops in from above). | `build_upper_sleeve()` |
-| `lower_sleeve`  | Installs from below; bottom flange under bearing inner race, bore stem through full bearing height. No upper step — bearing slides freely onto stem during assembly. | `build_lower_sleeve()` |
-| `washer`        | Flat ring (Ø14 × 1.5 mm, M4 clearance bore). Sits on bearing inner race top below the shoe; provides the thrust surface that clamps the shoe from below. Placed after bearing is assembled onto lower sleeve. | `build_washer()` |
-| 608 bearing     | Edge follower (Ø22 OD × Ø8 bore × 7 mm).                                 | sourced                 |
-| M4 bolt         | Clamps the sleeve stack from below into the upper sleeve's captive nut.   | sourced (M4 × ~25)      |
-| M4 hex nut      | Drops into the hex pocket in the upper sleeve top flange from above.     | sourced (7 mm AF × 3.2) |
+| `plate`         | Holds the Dremel via a 3/4"-12 UN internal thread. Two M6 heat-set inserts in the bottom face accept the M6 bolts rising from the shoe. No longitudinal channel. | `build_plate()` |
+| `shoe`          | Stadium-shaped body sitting flat on the work (z=0–SHOE_T). Front is a half-stadium snout (the only contact patch). Two M6 flat-head bolt holes with Ø12 × 4 mm countersinks on the shoe bottom accept the bolts (heads flush at z=0). Stadium-shaped bearing slot in the middle. | `build_shoe()` |
+| `upper_sleeve`  | Stem 1 + top flange with captive M4 hex nut (drops in from above).      | `build_upper_sleeve()`  |
+| `lower_sleeve`  | Bottom flange + bore stem (no step). Bearing slides onto stem freely.   | `build_lower_sleeve()`  |
+| `washer`        | Flat ring (Ø14 × 1.5 mm). Sits on bearing inner race top below shoe; provides thrust surface. | `build_washer()` |
+| 608 bearing     | Edge follower (Ø22 OD × Ø8 bore × 7 mm).                                | sourced                 |
+| M4 bolt         | Clamps bearing sleeve from below into upper sleeve's captive nut.        | sourced (M4 × ~25)      |
+| M4 hex nut      | Captive in upper sleeve top flange (drops in from above).               | sourced (7 mm AF × 3.2) |
+| M6 flat-head bolt × 2 | Rises from shoe through plate into heat-set insert; clamps plate to shoe. | sourced (M6 × ~20) |
 
 ## Coordinate system
 
@@ -31,197 +31,151 @@ Shoe-local frame is the world frame for the assembly.
 - **+X**: long axis of the shoe (surround at +X end, standoffs at −X end).
 - **+Y**: short axis (width).
 - **+Z**: up. **z = 0 is the bottom face of the shoe**, which rests on the
-  workpiece. The shoe body spans z = 0 to z = `SHOE_T` (= 8). The surround
-  snout occupies the front region from z = 0 to z = `SURROUND_HEIGHT` (= 4);
-  the rest of the front is cut away.
-
-The shoe is symmetric about the X-axis. The plate, in its own local frame,
-lies in the XY plane (Z = 0 to PLATE_T); when assembled it is translated
-upward by the (TBD) standoff height and laterally so its threaded bore
-sits over the shoe's bit hole.
+  workpiece. Shoe body spans z = 0 to z = `SHOE_T` (= 8). The surround snout
+  spans z = 0 to z = `SURROUND_HEIGHT` (= 4); the rest of the front is cut away.
 
 ## Shoe layout
 
-Three features lie on the shoe centerline (Y = 0), in this order along X:
-
 ```
 TOP VIEW (+Z down):
-+----------------------------------------------------+
-|  o       o        [====slot====]        ( O )      |
-+----------------------------------------------------+
-   bolt#1  bolt#2     bearing channel       surround
-   (back)              (upper sleeve         (bit hole)
-                        stem slides;
-                        M4 bolt from below)
++-------------------------------------------------------+
+|  (cs)   (cs)    [====slot====]         ( half-stad )  |
++-------------------------------------------------------+
+  bolt#2  bolt#1    bearing channel          surround
+  (back)             (upper sleeve           (bit hole)
+                      stem slides)
 
-SIDE VIEW (+Y in):
-+----------------------------------------------+
-|       shoe body — full thickness, z=0–SHOE_T |  z = SHOE_T = 8
-|  o   o   [ stadium slot ]   | snout only |   |
-+-----------------------------+             +   |  z = SURROUND_HEIGHT = 4
-                              |             |   |
-                              |_____________|   |  z = 0 (work surface)
-              (B) v                              <- snout is only contact patch
-           bearing top ≈ z = -LOWER_STEP_T = -1.5
-           bearing rolls on work edge below z=0
+SIDE VIEW:
++----- bolt holes w/ countersinks ------+-- snout ---+
+|  v    v    [ stadium slot ]           |   snout    |  z = SHOE_T = 8
+|  v    v                               |            |  z = SURROUND_HEIGHT = 4
+|_______________________________________+            |  z = 0 (work surface)
+  bolt heads flush at z=0                            |
+                     bearing top ≈ z = -WASHER_T = -1.5
 ```
 
-1. **Surround** (+X end). The front region of the shoe body (X extent
-   `SURROUND_LEN` = 14) is cut to a **half-stadium** snout: flat back face at
-   the surround region edge, semicircular front of radius `SURROUND_BOSS_D`/2
-   = 8, height `SURROUND_HEIGHT` = 4. The flat back gives a 16 mm-wide joint
-   to the shoe body (vs. the ~8 mm tangent contact of a circular snout),
-   improving stiffness. The bit hole goes through the snout at `SURROUND_X`.
-2. **Bearing channel** (middle). Stadium-shaped slot cut **through the
-   full thickness** of the shoe body. The upper sleeve's Stem 1 drops into
-   this slot from above. Sliding it along X before tightening sets the
-   bit-to-bearing distance.
-3. **Standoff bolt holes** (−X end). Two M5 clearance through-holes on the
-   centerline, spaced `STANDOFF_SPAN` apart.
+1. **Surround** (+X end). Half-stadium snout: flat back at the surround region
+   edge, semicircular front (radius `SURROUND_BOSS_D`/2 = 8). Height `SURROUND_HEIGHT`
+   = 4 mm. Only intentional contact patch with the work. Bit hole at `SURROUND_X`.
+2. **Bearing channel** (middle). Stadium slot through full shoe thickness.
+3. **Standoff bolt holes** (−X end). Two M6 flat-head bolt holes with
+   Ø12 × 4 mm countersinks on the shoe bottom (z=0 face), bolt heads flush.
+
+## Plate-to-shoe attachment
+
+Two M6 flat-head bolts rise from beneath the shoe (heads recessed in the
+shoe bottom countersinks), through the shoe, and into M6 heat-set inserts
+in the plate bottom face. The plate's `THREAD_X` bore aligns with the shoe's
+`SURROUND_X` bit hole; the insert positions are derived from the shoe's
+`STANDOFF_X_INNER` / `STANDOFF_X_OUTER` adjusted by this offset.
 
 ## Bearing housing assembly
 
-The bearing housing is a two-part sleeve, clamped by an M4 bolt that comes
-**up from below** and threads into an embedded **M4 hex nut** that drops
-into a pocket in the upper sleeve's top flange from above.
-
-### Upper sleeve
-
-- **Stem 1** (Ø `UPPER_STEM1_D` = 6, length `SHOE_T` = 8): fits through the
-  slot; the narrow diameter means the upper sleeve can install vertically from
-  above through the slot.
-- **Top flange** (Ø `UPPER_TOP_FLANGE_D` = 15, thickness `UPPER_TOP_FLANGE_T`
-  = 5): sits on the shoe body top and clamps the shoe from above. Contains the
-  hex nut pocket (opens upward; nut drops in from the top).
-
-### Lower sleeve
-
-- **Bottom flange** (Ø `LOWER_FLANGE_D` = 14): under the bearing inner race.
-- **Bore stem** (Ø `LOWER_STEM_D` = 7.8, length `LOWER_STEM_L` =
-  `BEARING_THK` = 7.0): fills the bearing bore end-to-end. No upper step —
-  the bearing slides freely onto the stem from above during assembly.
-
-### Washer
-
-- Ø `WASHER_OD` = 14, thickness `WASHER_T` = 1.5, M4 clearance bore.
-- Placed on the bearing inner race top after the bearing is assembled onto the
-  lower sleeve. Provides the thrust surface that contacts the shoe bottom (z = 0)
-  from below.
-
-### Assembly sequence
-
-1. Bearing slides down onto lower sleeve bore stem from above (stem Ø7.8, bore Ø8).
-2. Washer placed on bearing inner race top.
-3. Sub-assembly (lower sleeve + bearing + washer) raised to the shoe slot from below.
-4. Upper sleeve dropped through the slot from above (Stem 1 in slot, flange on top).
-5. M4 bolt inserted from below; threaded into captive hex nut in upper flange.
+Unchanged from v0.4. See the v0.4 stack and clamping description.
 
 ### Stack (bottom → top)
 
 ```
 M4 bolt head
-  → lower_sleeve bottom flange  (under bearing inner race)
-  → lower_sleeve bore stem      (fills bearing bore)
-  → washer                      (on bearing inner race top; contacts shoe bottom)
-  → shoe body bottom face       (slot edges clamped between washer and upper flange)
-  → upper_sleeve Stem 1         (in the slot)
-  → shoe body top face
-  → upper_sleeve top flange     (hex pocket holds captive M4 nut)
+  → lower_sleeve bottom flange
+  → lower_sleeve bore stem (full bearing bore)
+  → washer (on bearing inner race top; contacts shoe bottom)
+  → shoe body (clamped between washer below and upper flange above)
+  → upper_sleeve Stem 1 (in slot)
+  → upper_sleeve top flange (captive M4 nut)
 ```
 
-### Clamping
+### Assembly sequence
 
-- **Bearing**: inner race compressed between washer (above) and lower sleeve
-  bottom flange (below). Outer race is untouched and rotates freely.
-- **Shoe**: clamped between the upper sleeve's **top flange (above)** and the
-  **washer (below)**. Tightening the M4 bolt pulls the lower sleeve + washer
-  stack up against the shoe bottom; the upper sleeve's flange resists from above.
-
-### Washer / flange diameter rule
-
-Both `WASHER_OD` and `LOWER_FLANGE_D` (both = 14) are sized to overlap the
-**608 inner race only**: larger than the inner race OD (~Ø12) and smaller than
-the outer race ID (~Ø16). The rotating outer race never makes friction contact.
+1. Bearing slides down onto lower sleeve bore stem.
+2. Washer placed on bearing inner race top.
+3. Sub-assembly raised to shoe slot from below.
+4. Upper sleeve dropped through slot from above.
+5. M4 bolt inserted from below, threaded into captive hex nut.
 
 ## Dimensions (mm)
 
-Constants are mirrored in `cutter.py`. Update both together (see CLAUDE.md).
-
 ### Shared
 
-| Constant            | Value | Notes                                   |
-|---------------------|------:|-----------------------------------------|
-| `BEARING_OD`        | 22.0  | 608 outer diameter                      |
-| `BEARING_THK`       | 7.0   | 608 thickness                           |
-| `BOLT_CLEARANCE_D`  | 5.5   | M5 clearance                            |
-| `M4_BOLT_CLEARANCE_D` | 4.5 | M4 clearance                            |
-| `M4_NUT_AF`         | 7.0   | M4 hex nut, across-flats (nominal)      |
-| `M4_NUT_T`          | 3.2   | M4 hex nut thickness                    |
-| `M4_NUT_POCKET_AF`  | 7.2   | Hex pocket AF (0.1 mm clearance/flat)   |
-| `M4_NUT_POCKET_T`   | 3.5   | Hex pocket depth (nut T + 0.3 mm)       |
+| Constant              | Value | Notes                                      |
+|-----------------------|------:|--------------------------------------------|
+| `BEARING_OD`          | 22.0  | 608 outer diameter                         |
+| `BEARING_THK`         | 7.0   | 608 thickness                              |
+| `M4_BOLT_CLEARANCE_D` | 4.5   | M4 clearance for bearing clamp bolt        |
+| `M4_NUT_AF`           | 7.0   | M4 hex nut across-flats                    |
+| `M4_NUT_T`            | 3.2   | M4 hex nut thickness                       |
+| `M4_NUT_POCKET_AF`    | 7.2   | Hex pocket AF (0.1 mm clearance/flat)      |
+| `M4_NUT_POCKET_T`     | 3.5   | Hex pocket depth                           |
+| `M6_BOLT_CLEARANCE_D` | 6.5   | M6 standoff bolt shank clearance           |
+| `COUNTERSINK_D`       | 12.0  | M6 flat-head OD at shoe bottom             |
+| `COUNTERSINK_DEPTH`   | 4.0   | Countersink depth (head height)            |
 
-### Plate (unchanged from v0.1)
+### Plate
 
-| Constant         | Value | Notes                                                                 |
-|------------------|------:|-----------------------------------------------------------------------|
-| `PLATE_L`        | 90    | X (stadium tip-to-tip)                                                |
-| `PLATE_W`        | 30    | Y                                                                     |
-| `PLATE_T`        | 10    | Z                                                                     |
-| `THREAD_MAJOR`   | 19.05 | Dremel 3/4"-12 UN major Ø                                             |
-| `THREAD_PITCH`   | 25.4/12 | ≈ 2.117 mm                                                          |
-| `THREAD_X`       | 30    | Bore center on the +X-end semicircle                                  |
-| `CHANNEL_W`      | 5.5   | Longitudinal slot Y width (legacy mounting; unused by shoe v0.3)      |
-| `CHANNEL_LEN`    | 40    | Slot X length                                                         |
-| `CHANNEL_X_CENTER` | -15 | Slot center                                                           |
+| Constant            | Value | Notes                                                                 |
+|---------------------|------:|-----------------------------------------------------------------------|
+| `PLATE_L`           | 100   | Extended from 90 to give ≥6 mm wall around outer insert hole         |
+| `PLATE_W`           | 30    | Y                                                                     |
+| `PLATE_T`           | 11    | Z; thickened from 10 to take 10 mm inserts with 1 mm base            |
+| `THREAD_MAJOR`      | 19.05 | Dremel 3/4"-12 UN major Ø                                            |
+| `THREAD_PITCH`      | 25.4/12 | ≈ 2.117 mm                                                          |
+| `THREAD_X`          | 35    | = PLATE_L/2 − PLATE_W/2; bore center on +X semicircle               |
+| `M6_INSERT_OD`      | 8.0   | Heat-set insert OD                                                    |
+| `M6_INSERT_L`       | 10.0  | Insert length (= hole depth; 1 mm base remains)                      |
+| `M6_INSERT_HOLE_D`  | 7.7   | Bore for insert (0.15 mm interference/side for heat-set fit)         |
+| `M6_INSERT_CHAMFER` | 0.5   | Entry chamfer on plate bottom face                                    |
+
+Insert X positions are derived in `build_plate()` from shoe standoff positions
+adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 
 ### Shoe
 
-| Constant         | Value | Notes                                                                |
-|------------------|------:|----------------------------------------------------------------------|
-| `SHOE_W`         | 30    | Y. Matches PLATE_W.                                                  |
-| `SHOE_T`         | 8     | Z thickness of the shoe body. = upper sleeve Stem 1 length.          |
-| `SURROUND_HEIGHT`| 4     | Z height of the surround snout (z=0 to z=4).                         |
-| `SURROUND_WALL`  | 4     | Radial material around the bit hole in the snout.                    |
-| `SURROUND_BOSS_D`| 16    | Derived: BIT_HOLE_D + 2·SURROUND_WALL.                               |
-| `SURROUND_LEN`   | 14    | X extent of the surround region cut from the shoe body.              |
-| `BIT_HOLE_D`     | 8     | Bit clearance hole through the snout.                                |
-| `SLOT_LEN`       | 30    | Stadium slot X overall length. Adjustment range = SLOT_LEN − UPPER_STEM1_D = 24 mm. |
-| `SLOT_W`         | 6.5   | Slot Y width (= stadium semicircle Ø). Clears UPPER_STEM1_D (Ø6) with ~0.25 mm/side. |
-| `END_WALL_FRONT` | 3     | Surround edge → slot edge.                                           |
-| `SLOT_END_WALL`  | 3     | Slot edge → standoff bolt edge.                                      |
-| `END_WALL_BACK`  | 6     | Outer standoff bolt center → back end of shoe.                       |
-| `STANDOFF_BOLT_D`| 5.5   | M5 clearance (= BOLT_CLEARANCE_D).                                   |
-| `STANDOFF_SPAN`  | 20    | Bolt-center to bolt-center.                                          |
-| `SHOE_L`         | derived (78.75) | Computed from the wall/slot/bolt budget; see source.        |
+| Constant           | Value   | Notes                                                                  |
+|--------------------|--------:|------------------------------------------------------------------------|
+| `SHOE_W`           | 30      | Y. Matches PLATE_W.                                                    |
+| `SHOE_T`           | 8       | Z thickness.                                                           |
+| `SURROUND_HEIGHT`  | 4       | Z height of surround snout (z=0 to z=4).                              |
+| `SURROUND_WALL`    | 4       | Radial material around bit hole.                                       |
+| `SURROUND_BOSS_D`  | 16      | Derived: BIT_HOLE_D + 2·SURROUND_WALL.                                |
+| `SURROUND_LEN`     | 14      | X extent of surround region. Rectangle portion = SURROUND_LEN/2 = 7.  |
+| `BIT_HOLE_D`       | 8       | Router bit clearance.                                                  |
+| `SLOT_LEN`         | 30      | Bearing slot X length.                                                 |
+| `SLOT_W`           | 6.5     | Slot Y width. Clears UPPER_STEM1_D=6 with ~0.25 mm/side.              |
+| `END_WALL_FRONT`   | 3       | Surround edge → slot edge.                                             |
+| `SLOT_END_WALL`    | 6       | Slot edge → standoff bolt near edge (increased from 3 so Ø12 countersink clears slot by ≥3 mm). |
+| `END_WALL_BACK`    | 10      | Outer bolt center → back of shoe (increased from 6 to keep countersink inside shoe end). |
+| `STANDOFF_BOLT_D`  | 6.5     | = M6_BOLT_CLEARANCE_D.                                                |
+| `STANDOFF_SPAN`    | 20      | Bolt-center to bolt-center.                                            |
+| `SHOE_L`           | 86.25   | Derived (was 78.75).                                                   |
+
+**Countersink geometry check**: with SLOT_END_WALL = 6, the distance from inner
+bolt center to slot back edge = 6 + 6.5/2 = 9.25 mm. Countersink radius = 6 mm.
+Gap from countersink edge to slot = 3.25 mm ✓. With END_WALL_BACK = 10, the gap
+from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 
 ### Upper sleeve
 
-| Constant              | Value | Notes                                                                                |
-|-----------------------|------:|--------------------------------------------------------------------------------------|
-| `UPPER_STEM1_D`       | 6     | Stem in the shoe slot. Fits through SLOT_W (6.5) with ~0.25 mm/side clearance.      |
-| `UPPER_TOP_FLANGE_D`  | 15    | Sits on shoe body top.                                                               |
-| `UPPER_TOP_FLANGE_T`  | 5     | 1.5 mm solid base below nut pocket + 3.5 mm hex pocket from top.                    |
-
-The M4 hex nut drops into the hex pocket from above (pocket opens upward).
-The M4 clearance bore (Ø4.5) below the pocket is smaller than the nut AF (7 mm),
-so the nut cannot fall through. When the bolt is tightened, it threads into the
-nut; the hex walls prevent rotation; the nut is pulled down against the pocket floor.
+| Constant             | Value | Notes                                               |
+|----------------------|------:|-----------------------------------------------------|
+| `UPPER_STEM1_D`      | 6     | Stem in the shoe slot.                              |
+| `UPPER_TOP_FLANGE_D` | 15    | Sits on shoe body top.                              |
+| `UPPER_TOP_FLANGE_T` | 5     | 1.5 mm solid base + 3.5 mm nut pocket from top.    |
 
 ### Lower sleeve
 
-| Constant         | Value | Notes                                                            |
-|------------------|------:|------------------------------------------------------------------|
-| `LOWER_FLANGE_D` | 14    | Below bearing inner race (inner-race-only rule).                 |
-| `LOWER_FLANGE_T` | 1.5   |                                                                  |
-| `LOWER_STEM_D`   | 7.8   | Stem through bearing bore (608 bore = Ø8).                       |
-| `LOWER_STEM_L`   | 7.0   | = BEARING_THK; fills bore end-to-end.                            |
+| Constant         | Value | Notes                                                |
+|------------------|------:|------------------------------------------------------|
+| `LOWER_FLANGE_D` | 14    | Below bearing inner race.                            |
+| `LOWER_FLANGE_T` | 1.5   |                                                      |
+| `LOWER_STEM_D`   | 7.8   | Through 608 bore (Ø8), full height.                  |
+| `LOWER_STEM_L`   | 7.0   | = BEARING_THK; fills bore end-to-end.                |
 
 ### Washer
 
-| Constant     | Value | Notes                                                                |
-|--------------|------:|----------------------------------------------------------------------|
-| `WASHER_OD`  | 14    | Contacts bearing inner race only; clears outer race ID (~Ø16).       |
-| `WASHER_T`   | 1.5   | Thrust thickness between bearing inner race top and shoe bottom.     |
+| Constant    | Value | Notes                                                          |
+|-------------|------:|----------------------------------------------------------------|
+| `WASHER_OD` | 14    | Contacts inner race only; clears outer race ID (~Ø16).         |
+| `WASHER_T`  | 1.5   | Thrust thickness; bearing top at z = −WASHER_T = −1.5.        |
 
 ## Build & verify
 
@@ -231,29 +185,20 @@ uv run python cutter.py
 
 Produces in `out/`: `plate.{step,stl}`, `shoe.{step,stl}`,
 `upper_sleeve.{step,stl}`, `lower_sleeve.{step,stl}`, `washer.{step,stl}`.
-If the OCP CAD viewer extension is running in VS Code, the script also pushes
-an assembly preview.
 
 Visual checks in the viewer:
 
-- Shoe body spans z = 0 to z = SHOE_T = 8. Surround region is a half-stadium
-  snout (flat back, Ø16 rounded front, 4 mm tall); rest of the front is gone.
-- Stadium-shaped slot passes through the full thickness of the shoe body.
-- Upper sleeve: Stem 1 in the slot, top flange on shoe body top. Hex pocket
-  visible (opening upward) inside the top flange.
-- Lower sleeve: bore stem top at bearing inner race top; bottom flange below.
-  No step on the lower sleeve.
-- Washer: flat ring between bearing inner race top and shoe bottom (z = −WASHER_T
-  to z = 0).
-- Bearing top ≈ z = −WASHER_T = −1.5; outer race rotates freely; outer race
-  rolls on the work edge below z = 0.
-- M4 bolt clearance line is unobstructed bottom-to-top.
+- Plate has no longitudinal slot. Two insert holes (Ø7.7, 10 mm deep) with
+  entry chamfers visible on the bottom face.
+- Shoe: half-stadium snout at the +X end. Two countersunk bolt holes (Ø12 at
+  shoe bottom, narrowing to Ø6.5 at 4 mm depth) in the −X region.
+- Countersink edges clear the slot ends and shoe back wall.
+- Upper sleeve: Stem 1 in slot, flange on shoe top, hex nut pocket upward.
+- Washer flat ring between bearing inner race top and shoe bottom (z = −1.5 to 0).
+- M4 clearance line unobstructed through sleeve stack.
 
 ## Out of scope (next iterations)
 
-- **Standoffs** between shoe and plate.
-- **Plate v2**: the existing longitudinal slot is no longer needed once the
-  standoffs use fixed bolts to the shoe.
-- M4 bolt head choice (socket cap vs. knurled thumbscrew for in-use adjustment).
-- Alignment features (dowel pins, etc.) between shoe / standoffs / plate.
-- M4 bolt head choice (socket cap vs. knurled thumbscrew for in-use adjustment).
+- Physical standoffs are replaced by M6 flat-head bolts; no separate standoff part.
+- M4 bolt head choice (socket cap vs. thumbscrew).
+- Alignment features between shoe and plate.
