@@ -121,7 +121,7 @@ M4 bolt head
 | `THREAD_PITCH`      | 25.4/12 | ≈ 2.117 mm                                                          |
 | `THREAD_X`          | 35    | = PLATE_L/2 − PLATE_W/2; bore center on +X semicircle               |
 | `M6_INSERT_OD`      | 8.0   | Heat-set insert OD                                                    |
-| `M6_INSERT_L`       | 10.0  | Insert length (= hole depth; 1 mm base remains)                      |
+| `M6_INSERT_L`       | 10.0  | Insert length (hole is through-plate for easy bolt passage)           |
 | `M6_INSERT_HOLE_D`  | 7.7   | Bore for insert (0.15 mm interference/side for heat-set fit)         |
 | `M6_INSERT_CHAMFER` | 0.5   | Entry chamfer on plate bottom face                                    |
 
@@ -188,7 +188,7 @@ Produces in `out/`: `plate.{step,stl}`, `shoe.{step,stl}`,
 
 Visual checks in the viewer:
 
-- Plate has no longitudinal slot. Two insert holes (Ø7.7, 10 mm deep) with
+- Plate has no longitudinal slot. Two insert holes (Ø7.7, through-plate) with
   entry chamfers visible on the bottom face.
 - Shoe: half-stadium snout at the +X end. Two countersunk bolt holes (Ø12 at
   shoe bottom, narrowing to Ø6.5 at 4 mm depth) in the −X region.

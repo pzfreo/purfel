@@ -171,10 +171,10 @@ def build_plate():
             height=M6_INSERT_CHAMFER + 0.1,
             align=(Align.CENTER, Align.CENTER, Align.MIN),
         )
-        # Insert bore (depth = M6_INSERT_L; 1 mm solid remains above insert).
+        # Insert bore: through the full plate thickness.
         plate -= Pos(x, 0, M6_INSERT_CHAMFER - 0.1) * Cylinder(
             radius=M6_INSERT_HOLE_D / 2,
-            height=M6_INSERT_L + 0.2,
+            height=PLATE_T + 0.2,
             align=(Align.CENTER, Align.CENTER, Align.MIN),
         )
 
