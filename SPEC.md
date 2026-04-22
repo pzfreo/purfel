@@ -142,14 +142,14 @@ adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 | `SURROUND_FILLET_OUT` | 3.4  | Fillet on outer bottom perimeter of snout. Max before colliding with the inner fillet at the cap (SURROUND_WALL − bit_r − SURROUND_FILLET_IN − margin). |
 | `SURROUND_FILLET_IN`  | 0.5  | Fillet on bit hole bottom edge (smooth bit entry). |
 | `BIT_HOLE_D`       | 6       | Router bit clearance.                                                  |
-| `SLOT_LEN`         | 30      | Bearing slot X length.                                                 |
+| `SLOT_LEN`         | 15      | Bearing slot X length. Gives bearing-edge-to-bit-edge gap of 1.25–10.25 mm and a 34.25 mm cantilever (inner bolt → bit center). `max_gap = SLOT_LEN − 4.75`; `cantilever = 19.25 + SLOT_LEN`. |
 | `SLOT_W`           | 6.5     | Slot Y width. Clears UPPER_STEM1_D=6 with ~0.25 mm/side.              |
 | `END_WALL_FRONT`   | 3       | Surround edge → slot edge.                                             |
 | `SLOT_END_WALL`    | 6       | Slot edge → standoff bolt near edge (increased from 3 so Ø12 countersink clears slot by ≥3 mm). |
 | `END_WALL_BACK`    | 10      | Outer bolt center → back of shoe (increased from 6 to keep countersink inside shoe end). |
 | `STANDOFF_BOLT_D`  | 6.5     | = M6_BOLT_CLEARANCE_D.                                                |
 | `STANDOFF_SPAN`    | 20      | Bolt-center to bolt-center.                                            |
-| `SHOE_L`           | 86.25   | Derived (was 78.75).                                                   |
+| `SHOE_L`           | 71.25   | Derived. Shrank from 86.25 when SLOT_LEN went 30 → 15.                 |
 
 **Countersink geometry check**: with SLOT_END_WALL = 6, the distance from inner
 bolt center to slot back edge = 6 + 6.5/2 = 9.25 mm. Countersink radius = 6 mm.
