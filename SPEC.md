@@ -138,7 +138,8 @@ adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 | `SURROUND_WALL`    | 4       | Radial material around bit hole.                                       |
 | `SURROUND_BOSS_D`  | 16      | Derived: BIT_HOLE_D + 2·SURROUND_WALL.                                |
 | `SURROUND_LEN`     | 14      | X extent of surround region. Rectangle portion = SURROUND_LEN/2 = 7.  |
-| `SURROUND_FILLET`  | 1.0     | Fillet radius on the snout's outer bottom perimeter (no sharp corners on workpiece contact). |
+| `SURROUND_FILLET_OUT` | 3.4  | Fillet on outer bottom perimeter of snout. Max before colliding with the inner fillet at the cap (SURROUND_WALL − bit_r − SURROUND_FILLET_IN − margin). |
+| `SURROUND_FILLET_IN`  | 0.5  | Fillet on bit hole bottom edge (smooth bit entry). |
 | `BIT_HOLE_D`       | 8       | Router bit clearance.                                                  |
 | `SLOT_LEN`         | 30      | Bearing slot X length.                                                 |
 | `SLOT_W`           | 6.5     | Slot Y width. Clears UPPER_STEM1_D=6 with ~0.25 mm/side.              |

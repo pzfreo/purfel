@@ -86,7 +86,8 @@ SURROUND_WALL = 4                # radial material around bit hole
 BIT_HOLE_D = 8                   # router bit clearance
 SURROUND_BOSS_D = BIT_HOLE_D + 2 * SURROUND_WALL  # = 16
 SURROUND_LEN = 14                # X extent of the surround region
-SURROUND_FILLET = 1.0            # radius: bottom outer perimeter of snout
+SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: SURROUND_WALL − bit_r − inner_fillet ≈ 3.5)
+SURROUND_FILLET_IN = 0.5         # bit hole bottom edge
 
 # Bearing channel
 SLOT_LEN = 30
@@ -221,7 +222,7 @@ def build_shoe():
     # Fillet the outer bottom perimeter of the snout at z=0.
     # Keep z=0 edges in the snout region (x > surround_x_start), skip the
     # bit hole and the rect back edge that meets the main shoe body.
-    surround_bottom = []
+    outer_bottom = []
     for e in shoe.edges():
         c = e.center()
         if abs(c.Z) > 0.01:
@@ -230,8 +231,17 @@ def build_shoe():
             continue
         if e.geom_type == GeomType.CIRCLE and e.radius < SURROUND_BOSS_D / 2 - 0.5:
             continue
-        surround_bottom.append(e)
-    shoe = fillet(surround_bottom, radius=SURROUND_FILLET)
+        outer_bottom.append(e)
+    shoe = fillet(outer_bottom, radius=SURROUND_FILLET_OUT)
+
+    # Fillet the bit hole bottom edge (z=0 circle of radius BIT_HOLE_D/2).
+    bit_hole_bottom = [
+        e for e in shoe.edges()
+        if abs(e.center().Z) < 0.01
+        and e.geom_type == GeomType.CIRCLE
+        and abs(e.radius - BIT_HOLE_D / 2) < 0.1
+    ]
+    shoe = fillet(bit_hole_bottom, radius=SURROUND_FILLET_IN)
 
     # Bearing channel.
     with BuildSketch() as slot_sk:
