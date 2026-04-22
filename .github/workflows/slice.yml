@@ -1,0 +1,21 @@
+name: Slice
+
+on: [push]
+
+jobs:
+  slice:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build models
+        run: uv run python cutter.py
+
+      - uses: estampo/estampo/action@v0
+        with:
+          config: estampo.toml
