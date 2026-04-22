@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "build123d",
+#     "bd_warehouse",
+# ]
+# ///
 """Purfling cutter — v0.4: plate + shoe + two-part bearing sleeve + washer.
 
 Four printed parts (standoffs replaced by M6 flat-head bolts):
