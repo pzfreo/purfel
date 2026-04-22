@@ -2,24 +2,27 @@
 
 Three printed parts (standoffs are TBD, out of scope here):
 - **plate**: 3/4"-12 UN threaded mount for the Dremel nose, unchanged from v0.1.
-- **shoe**: low pill-shaped sole that sits on the work at z=0. Has a bit hole
-  (front), a through-thickness slot for the bearing sleeve (middle), and two
-  M5 standoff bolt holes (back), all on the shoe's centerline.
+- **shoe**: pill-shaped body raised above the work, with a small Ø
+  surround boss (the only contact patch) at the front, a stadium-shaped
+  through-thickness bearing slot in the middle, and two M5 standoff bolt
+  holes at the back, all on the shoe's centerline.
 - **upper_sleeve / lower_sleeve**: two-part bearing housing, captive on a 608
-  bearing. Clamped by an M4 bolt from below that threads into an M4 heat-set
-  insert in the upper sleeve. Sliding the upper sleeve along the shoe slot
-  before tightening sets the bit-to-bearing distance.
+  bearing. Clamped by an M4 bolt from below that threads into an embedded
+  M4 hex nut in the upper sleeve's top flange. Sliding the upper sleeve
+  along the shoe slot before tightening sets the bit-to-bearing distance.
 
 Coordinates
 -----------
 Shoe-local frame is the world frame for the assembly.
   +X : long axis of the shoe (surround at +X end, standoffs at -X end).
   +Y : short axis (width).
-  +Z : up. z = 0 is the shoe bottom (sits on workpiece top).
+  +Z : up. z = 0 is the bottom of the surround boss (sits on workpiece
+       top). The shoe body is raised to z = SURROUND_HEIGHT.
 """
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from build123d import (
@@ -30,6 +33,7 @@ from build123d import (
     Cylinder,
     GeomType,
     Pos,
+    RegularPolygon,
     SlotOverall,
     chamfer,
     export_step,
@@ -68,11 +72,18 @@ INSERT_CHAMFER = 0.5
 SHOE_W = 30                      # Y, matches PLATE_W
 SHOE_T = 8                       # Z; = upper sleeve Stem 1 length
 
-# Surround region (front, contains bit hole). Sized so the bearing can
-# slide forward enough to bring its outer edge within ~2 mm of the bit
-# centerline (see slot/stem widths below); see SPEC.md for the geometry.
-SURROUND_LEN = 14                # X extent reserved for surround
+# Surround. The shoe body is raised SURROUND_HEIGHT above the work; only
+# this small Ø boss at the front drops down to z=0 to act as the contact
+# patch. SURROUND_BOSS_D = BIT_HOLE_D + 2*SURROUND_WALL.
+SURROUND_HEIGHT = 4              # Z height of the boss below the shoe body
+SURROUND_WALL = 4                # radial material around the bit hole
 BIT_HOLE_D = 8                   # router bit clearance (TODO: pick real bit)
+SURROUND_BOSS_D = BIT_HOLE_D + 2 * SURROUND_WALL  # = 16
+
+# X extent reserved for the surround region of the shoe BODY (not the boss).
+# Sized so the bearing can slide forward enough to bring its outer edge
+# within ~2 mm of the bit centerline; see SPEC.md for the geometry.
+SURROUND_LEN = 14                # X extent reserved for surround in body
 
 # Bearing channel (through-thickness slot, X-aligned)
 SLOT_LEN = 30                    # X adjustment range
@@ -108,8 +119,17 @@ STANDOFF_X_OUTER = STANDOFF_X_INNER - STANDOFF_SPAN
 
 # ---- bearing housing (two-part sleeve, M4 clamp from below) ---- #
 M4_BOLT_CLEARANCE_D = 4.5
-M4_INSERT_HOLE_D = 5.7           # OD of brass M4 insert pocket
-M4_INSERT_LEN = 8                # depth of insert pocket
+
+# M4 hex nut, captive in the upper sleeve top flange. Standard M4 nut:
+# 7 mm AF, 3.2 mm thick. Pocket has a slight clearance for press-fit.
+M4_NUT_AF = 7.0
+M4_NUT_T = 3.2
+M4_NUT_POCKET_AF = 7.2           # 0.1 mm clearance per flat
+M4_NUT_POCKET_T = 3.5            # 0.3 mm Z clearance over nut
+NUT_POCKET_BOTTOM_LIFT = 0.5     # leave a thin connecting layer of flange
+                                 # material UNDER the nut pocket so the
+                                 # hex doesn't disconnect Stem 1 (Ø6) from
+                                 # the outer flange ring (Ø15)
 
 # Upper sleeve stack (built bottom→top, Stem 2 base at local z=0).
 UPPER_STEM2_D = 7.8              # into 608 bore from above
@@ -119,8 +139,7 @@ UPPER_STEP_T = 1.5
 UPPER_STEM1_D = 6                # in the shoe slot (just M4 bolt clearance + wall)
 # UPPER_STEM1_L = SHOE_T (consumed at build time)
 UPPER_TOP_FLANGE_D = 15          # sits on shoe top
-UPPER_TOP_FLANGE_T = 9           # tall enough to fully contain the M4 insert
-                                 # (8 mm insert + 1 mm cap above)
+UPPER_TOP_FLANGE_T = 5           # holds the M4 nut pocket (3.5) + 1.5 mm cap
 
 # Lower sleeve stack (built bottom→top, bottom flange at local z=0).
 LOWER_FLANGE_D = 14              # below bearing inner race
@@ -160,27 +179,38 @@ def build_plate():
 
 
 def build_shoe():
-    # Stadium footprint, extruded to SHOE_T. Bottom at z=0, top at z=SHOE_T.
+    # Shoe BODY: stadium footprint, raised to z=SURROUND_HEIGHT so only the
+    # surround boss touches the work. Body spans z=SURROUND_HEIGHT to
+    # z=SURROUND_HEIGHT + SHOE_T.
     with BuildSketch() as sk:
         SlotOverall(SHOE_L, SHOE_W)
-    shoe = extrude(sk.sketch, amount=SHOE_T)
+    body = extrude(sk.sketch, amount=SHOE_T)
+    shoe = Pos(0, 0, SURROUND_HEIGHT) * body
 
-    # Bit hole through the surround.
+    # Surround boss: small Ø cylinder, drops from the underside of the body
+    # at z=SURROUND_HEIGHT down to z=0 (workpiece surface). This is the
+    # only intentional contact patch with the work.
+    shoe += Pos(SURROUND_X, 0, 0) * Cylinder(
+        radius=SURROUND_BOSS_D / 2, height=SURROUND_HEIGHT,
+        align=(Align.CENTER, Align.CENTER, Align.MIN),
+    )
+
+    # Bit hole through both the surround boss and the body, full height.
     shoe -= Pos(SURROUND_X, 0, -0.1) * Cylinder(
         radius=BIT_HOLE_D / 2,
-        height=SHOE_T + 0.2,
+        height=SURROUND_HEIGHT + SHOE_T + 0.2,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
 
-    # Bearing channel: through-thickness rectangular slot.
-    shoe -= Pos(SLOT_X_CENTER, 0, -0.1) * Box(
-        SLOT_LEN, SLOT_W, SHOE_T + 0.2,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
-    )
+    # Bearing channel: stadium-shaped slot through the body only.
+    with BuildSketch() as slot_sk:
+        SlotOverall(SLOT_LEN, SLOT_W)
+    slot_cut = extrude(slot_sk.sketch, amount=SHOE_T + 0.2)
+    shoe -= Pos(SLOT_X_CENTER, 0, SURROUND_HEIGHT - 0.1) * slot_cut
 
-    # Two standoff bolt holes (M5 clearance through the full thickness).
+    # Two standoff bolt holes (M5 clearance through the body).
     for x in (STANDOFF_X_INNER, STANDOFF_X_OUTER):
-        shoe -= Pos(x, 0, -0.1) * Cylinder(
+        shoe -= Pos(x, 0, SURROUND_HEIGHT - 0.1) * Cylinder(
             radius=STANDOFF_BOLT_D / 2,
             height=SHOE_T + 0.2,
             align=(Align.CENTER, Align.CENTER, Align.MIN),
@@ -212,19 +242,26 @@ def build_upper_sleeve():
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
     flange_z = z  # bottom of top flange = top of Stem 1
+    total_h = z + UPPER_TOP_FLANGE_T
 
-    # M4 bolt clearance from the BOTTOM up through Stem 2, Step, and Stem 1
-    # to the bottom of the top flange.
-    body -= Pos(0, 0, -0.01) * Cylinder(
-        radius=M4_BOLT_CLEARANCE_D / 2, height=flange_z + 0.01,
+    # M4 bolt clearance straight through the WHOLE upper sleeve. (Bottom
+    # to top — easier than two stacked bores and avoids a coplanar face
+    # at flange_z where the hex pocket would otherwise split the body.)
+    body -= Pos(0, 0, -0.1) * Cylinder(
+        radius=M4_BOLT_CLEARANCE_D / 2, height=total_h + 0.2,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
-    # M4 insert pocket inside the top flange (insert pressed in from below,
-    # open end facing the bolt; closed end against the cap above).
-    body -= Pos(0, 0, flange_z) * Cylinder(
-        radius=M4_INSERT_HOLE_D / 2, height=M4_INSERT_LEN,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
-    )
+    # M4 hex nut pocket inside the top flange (nut press-fits in from
+    # below). The annular cap above the nut — between the M4 clearance
+    # bore (Ø4.5) and the hex inradius (~Ø7.2) — retains the nut.
+    # RegularPolygon takes a circumradius (vertex-to-center); extrude()
+    # of a sketch returns a Part, so take .solids()[0].
+    with BuildSketch() as nut_sk:
+        RegularPolygon(
+            radius=M4_NUT_POCKET_AF / math.sqrt(3), side_count=6,
+        )
+    nut_pocket = extrude(nut_sk.sketch, amount=M4_NUT_POCKET_T).solids()[0]
+    body -= Pos(0, 0, flange_z + NUT_POCKET_BOTTOM_LIFT) * nut_pocket
 
     return body
 
@@ -274,13 +311,15 @@ def main() -> None:
     # Bearing center at the slot midpoint for the preview.
     bearing_x = SLOT_X_CENTER
 
-    # Upper sleeve: Stem 2 base at world z = -(UPPER_STEM2_L + UPPER_STEP_T)
-    # so the step's TOP face sits flush at z=0 (= shoe bottom in slot region).
-    upper_z_base = -(UPPER_STEM2_L + UPPER_STEP_T)
+    # Upper sleeve: Stem 2 base placed so the step's TOP face sits flush at
+    # z=SURROUND_HEIGHT (= shoe body bottom in slot region).
+    upper_z_base = SURROUND_HEIGHT - (UPPER_STEM2_L + UPPER_STEP_T)
     upper_assembled = Pos(bearing_x, 0, upper_z_base) * upper_sleeve
 
-    # Bearing: top at world z = -UPPER_STEP_T (just below upper step).
-    bearing_top_z = -UPPER_STEP_T
+    # Bearing: top just below upper step → at z = SURROUND_HEIGHT − UPPER_STEP_T.
+    # With current values that's z=2.5, so the bearing rolls on the work
+    # edge for the part below z=0 (BEARING_THK − bearing_top_z = 4.5 mm).
+    bearing_top_z = SURROUND_HEIGHT - UPPER_STEP_T
     bearing_bottom_z = bearing_top_z - BEARING_THK
     bearing_ghost = Cylinder(
         radius=BEARING_OD / 2, height=BEARING_THK,
@@ -299,7 +338,7 @@ def main() -> None:
     # Plate: floats above the shoe at STANDOFF_VIS_H, aligned so the threaded
     # bore sits over the shoe's bit hole (visualization only — standoffs TBD).
     plate_assembled = Pos(
-        SURROUND_X - THREAD_X, 0, SHOE_T + STANDOFF_VIS_H
+        SURROUND_X - THREAD_X, 0, SURROUND_HEIGHT + SHOE_T + STANDOFF_VIS_H
     ) * plate
 
     try:
