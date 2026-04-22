@@ -91,7 +91,7 @@ SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: 
 SURROUND_FILLET_IN = 0.5         # bit hole bottom edge
 
 # Bearing channel
-SLOT_LEN = 30
+SLOT_LEN = 15                    # gives bearing-edge-to-bit-edge gap of 1.25–10.25 mm; cantilever = 19.25 + SLOT_LEN
 SLOT_W = 6.5                     # clears UPPER_STEM1_D=6 + ~0.25/side
 
 # Walls — SLOT_END_WALL and END_WALL_BACK sized so Ø12 countersinks clear the
