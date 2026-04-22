@@ -14,7 +14,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
 
       - name: Build models
-        run: uv run python cutter.py
+        run: uv run --script cutter.py
 
       - uses: estampo/estampo/action@v0
         with:
