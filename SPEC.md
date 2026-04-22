@@ -88,8 +88,7 @@ M4 bolt head
   → shoe bottom face            (clamped by step from below at slot edges)
   → upper_sleeve Stem 1         (in the slot)
   → shoe top face               (clamped by top flange from above)
-  → upper_sleeve top flange
-  → upper_sleeve body containing M4 insert
+  → upper_sleeve top flange     (contains the M4 insert in its upper 8 mm)
 ```
 
 ### Clamping
@@ -144,16 +143,22 @@ Constants are mirrored in `cutter.py`. Update both together (see CLAUDE.md).
 |------------------|------:|----------------------------------------------------------------------|
 | `SHOE_W`         | 30    | Y. Matches PLATE_W.                                                  |
 | `SHOE_T`         | 8     | Z. = upper sleeve Stem 1 length.                                     |
-| `SURROUND_LEN`   | 22    | X extent reserved for the surround (front of shoe).                  |
+| `SURROUND_LEN`   | 14    | X extent reserved for the surround (front of shoe).                  |
 | `BIT_HOLE_D`     | 8     | Bit clearance hole through the surround.                             |
-| `SLOT_LEN`       | 30    | Bearing slot X length = bit-to-bearing adjustment range.             |
-| `SLOT_W`         | 8.5   | Slot Y width. Clears UPPER_STEM1_D (Ø8) with ~0.25 mm/side.          |
-| `END_WALL_FRONT` | 6     | Surround edge → slot edge.                                           |
+| `SLOT_LEN`       | 30    | Bearing slot X length. Adjustment range = SLOT_LEN − UPPER_STEM1_D = 24 mm. |
+| `SLOT_W`         | 6.5   | Slot Y width. Clears UPPER_STEM1_D (Ø6) with ~0.25 mm/side.          |
+| `END_WALL_FRONT` | 3     | Surround edge → slot edge.                                           |
 | `SLOT_END_WALL`  | 3     | Slot edge → standoff bolt edge.                                      |
 | `END_WALL_BACK`  | 6     | Outer standoff bolt center → back end of shoe.                       |
 | `STANDOFF_BOLT_D`| 5.5   | M5 clearance (= BOLT_CLEARANCE_D).                                   |
 | `STANDOFF_SPAN`  | 20    | Bolt-center to bolt-center.                                          |
-| `SHOE_L`         | derived (~89.75) | Computed from the wall/slot/bolt budget; see source.       |
+| `SHOE_L`         | derived (78.75) | Computed from the wall/slot/bolt budget; see source.        |
+
+**Bearing reach (design constraint)**: with these values, when the upper
+sleeve is at the front limit of the slot, the bearing's outer edge sits
+**2.0 mm from the bit centerline** (and 6.0 mm of shoe wall remains between
+the bit hole and the slot front edge). The bit-to-bearing distance ranges
+from **13 mm to 37 mm**.
 
 ### Upper sleeve
 
@@ -163,10 +168,15 @@ Constants are mirrored in `cutter.py`. Update both together (see CLAUDE.md).
 | `UPPER_STEM2_L`       | BEARING_THK / 2 = 3.5 | Half the bore depth; meets lower stem mid-bore.                      |
 | `UPPER_STEP_D`        | 14    | Thrust step on bearing inner race; clears outer race ID.                             |
 | `UPPER_STEP_T`        | 1.5   | Step thickness.                                                                      |
-| `UPPER_STEM1_D`       | 8     | Stem in the shoe slot.                                                               |
+| `UPPER_STEM1_D`       | 6     | Stem in the shoe slot. Just M4 clearance + ~0.75 mm wall.                            |
 | `UPPER_STEM1_L`       | SHOE_T = 8 | (consumed at build time)                                                       |
 | `UPPER_TOP_FLANGE_D`  | 15    | Sits on shoe top.                                                                    |
-| `UPPER_TOP_FLANGE_T`  | 3     | Top flange thickness.                                                                |
+| `UPPER_TOP_FLANGE_T`  | 9     | Tall enough to fully contain the M4 insert (8 mm) with a 1 mm cap above.             |
+
+The M4 insert lives **inside the top flange** (not in Stem 1), because Stem 1
+at Ø6 has insufficient wall around the Ø5.7 insert. The full path from the
+bottom of the upper sleeve up to the top flange is just M4 bolt clearance
+(Ø4.5).
 
 ### Lower sleeve
 

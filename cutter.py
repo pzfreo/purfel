@@ -68,16 +68,18 @@ INSERT_CHAMFER = 0.5
 SHOE_W = 30                      # Y, matches PLATE_W
 SHOE_T = 8                       # Z; = upper sleeve Stem 1 length
 
-# Surround region (front, contains bit hole)
-SURROUND_LEN = 22                # X extent reserved for surround
+# Surround region (front, contains bit hole). Sized so the bearing can
+# slide forward enough to bring its outer edge within ~2 mm of the bit
+# centerline (see slot/stem widths below); see SPEC.md for the geometry.
+SURROUND_LEN = 14                # X extent reserved for surround
 BIT_HOLE_D = 8                   # router bit clearance (TODO: pick real bit)
 
 # Bearing channel (through-thickness slot, X-aligned)
 SLOT_LEN = 30                    # X adjustment range
-SLOT_W = 8.5                     # Y; clears UPPER_STEM1_D=8 + ~0.25/side
+SLOT_W = 6.5                     # Y; clears UPPER_STEM1_D=6 + ~0.25/side
 
 # Walls
-END_WALL_FRONT = 6               # surround edge → slot edge
+END_WALL_FRONT = 3               # surround edge → slot edge
 SLOT_END_WALL = 3                # slot edge → standoff bolt edge
 END_WALL_BACK = 6                # outer standoff bolt center → back end
 
@@ -114,10 +116,11 @@ UPPER_STEM2_D = 7.8              # into 608 bore from above
 UPPER_STEM2_L = BEARING_THK / 2  # = 3.5; meets lower stem mid-bore
 UPPER_STEP_D = 14                # thrust step on bearing inner race
 UPPER_STEP_T = 1.5
-UPPER_STEM1_D = 8                # in the shoe slot
+UPPER_STEM1_D = 6                # in the shoe slot (just M4 bolt clearance + wall)
 # UPPER_STEM1_L = SHOE_T (consumed at build time)
 UPPER_TOP_FLANGE_D = 15          # sits on shoe top
-UPPER_TOP_FLANGE_T = 3
+UPPER_TOP_FLANGE_T = 9           # tall enough to fully contain the M4 insert
+                                 # (8 mm insert + 1 mm cap above)
 
 # Lower sleeve stack (built bottom→top, bottom flange at local z=0).
 LOWER_FLANGE_D = 14              # below bearing inner race
@@ -208,18 +211,18 @@ def build_upper_sleeve():
         radius=UPPER_TOP_FLANGE_D / 2, height=UPPER_TOP_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
-    total_h = z + UPPER_TOP_FLANGE_T
+    flange_z = z  # bottom of top flange = top of Stem 1
 
-    # M4 insert pocket from the BOTTOM (insert is pressed in from below,
-    # open end facing the M4 bolt that comes up from below).
+    # M4 bolt clearance from the BOTTOM up through Stem 2, Step, and Stem 1
+    # to the bottom of the top flange.
     body -= Pos(0, 0, -0.01) * Cylinder(
-        radius=M4_INSERT_HOLE_D / 2, height=M4_INSERT_LEN + 0.01,
+        radius=M4_BOLT_CLEARANCE_D / 2, height=flange_z + 0.01,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
-    # M4 clearance above the insert pocket up through the top flange.
-    body -= Pos(0, 0, M4_INSERT_LEN) * Cylinder(
-        radius=M4_BOLT_CLEARANCE_D / 2,
-        height=total_h - M4_INSERT_LEN + 0.1,
+    # M4 insert pocket inside the top flange (insert pressed in from below,
+    # open end facing the bolt; closed end against the cap above).
+    body -= Pos(0, 0, flange_z) * Cylinder(
+        radius=M4_INSERT_HOLE_D / 2, height=M4_INSERT_LEN,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
 
