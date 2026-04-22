@@ -1,16 +1,28 @@
-"""Purfling cutter — v0.2: plate + shoe + two-part bearing sleeve.
+"""Purfling cutter — v0.3: plate + shoe + two-part bearing sleeve + washer.
 
-Three printed parts (standoffs are TBD, out of scope here):
+Four printed parts (standoffs are TBD, out of scope here):
 - **plate**: 3/4"-12 UN threaded mount for the Dremel nose, unchanged from v0.1.
 - **shoe**: pill-shaped body, z=0–SHOE_T, sitting flat on the workpiece.
-  The front (surround) region is cut down to a Ø SURROUND_BOSS_D × SURROUND_HEIGHT
-  snout — the only intentional contact patch. A stadium-shaped through-slot in
-  the middle carries the upper sleeve; two M5 holes at the back take standoffs.
+  The front (surround) region is cut down to a half-stadium snout of width
+  SURROUND_BOSS_D and height SURROUND_HEIGHT — the only intentional contact
+  patch. A stadium-shaped through-slot in the middle carries the upper sleeve;
+  two M5 holes at the back take standoffs.
 - **upper_sleeve / lower_sleeve**: two-part bearing housing for a 608 bearing.
-  Upper sleeve (Stem 1 + top flange with captive M4 hex nut) installs from above
-  through the slot. Lower sleeve (bottom flange + bore stem + upper step) carries
-  the bearing from below. M4 bolt from below threads into the nut; tightening
-  clamps the shoe between the upper flange (above) and the lower step (below).
+  Upper sleeve (Stem 1 + top flange with captive M4 hex nut) installs from
+  above through the slot. Lower sleeve (bottom flange + bore stem) installs
+  from below; the bearing slides down onto its stem, then the washer sits on
+  top of the bearing inner race. M4 bolt from below threads into the nut.
+- **washer**: flat ring (Ø WASHER_OD × WASHER_T, M4 clearance bore). Sits on
+  top of the bearing inner race, below the shoe, providing the thrust surface
+  that contacts the shoe bottom from below. Kept separate so the bearing can
+  be assembled onto the lower sleeve without obstruction.
+
+Assembly sequence (bottom → top):
+  1. Bearing slides down onto lower sleeve bore stem from above.
+  2. Washer placed on bearing inner race top.
+  3. Sub-assembly (lower + bearing + washer) brought up to the shoe slot.
+  4. Upper sleeve dropped through the slot from above.
+  5. M4 bolt inserted from below, threaded into the captive hex nut.
 
 Coordinates
 -----------
@@ -18,9 +30,7 @@ Shoe-local frame is the world frame for the assembly.
   +X : long axis of the shoe (surround at +X end, standoffs at -X end).
   +Y : short axis (width).
   +Z : up. z = 0 is the bottom of the shoe (sits on workpiece top).
-       The surround snout spans z = 0 to z = SURROUND_HEIGHT; the shoe body
-       spans z = 0 to z = SHOE_T (full thickness everywhere except the
-       surround region, which is cut to the snout).
+       Shoe body spans z = 0 to z = SHOE_T.
 """
 
 from __future__ import annotations
@@ -75,17 +85,20 @@ INSERT_CHAMFER = 0.5
 SHOE_W = 30                      # Y, matches PLATE_W
 SHOE_T = 8                       # Z; = upper sleeve Stem 1 length
 
-# Surround snout: the front of the shoe body is cut to a Ø SURROUND_BOSS_D
-# cylinder of height SURROUND_HEIGHT — the only intentional contact patch.
-# Everything else in the surround region (forward of the slot) is removed.
+# Surround snout: the front of the shoe body is cut to a half-stadium shape
+# (flat back, semicircular front) of width SURROUND_BOSS_D and height
+# SURROUND_HEIGHT — the only intentional contact patch with the work.
 # SURROUND_BOSS_D = BIT_HOLE_D + 2·SURROUND_WALL.
 SURROUND_HEIGHT = 4              # Z height of the snout (z=0 to z=4)
 SURROUND_WALL = 4                # radial material around the bit hole
 BIT_HOLE_D = 8                   # router bit clearance
 SURROUND_BOSS_D = BIT_HOLE_D + 2 * SURROUND_WALL  # = 16
 
-# X extent reserved for the surround region of the shoe BODY.
-SURROUND_LEN = 14                # X extent reserved for surround in body
+# X extent reserved for the surround region cut from the shoe body.
+# The snout's flat back is at the -X edge of this region; the semicircle
+# center (and bit hole) is at the midpoint (SURROUND_X). Rectangle length
+# = SURROUND_LEN/2; semicircle radius = SURROUND_BOSS_D/2.
+SURROUND_LEN = 14                # X extent of the surround region
 
 # Bearing channel (through-thickness slot, X-aligned)
 SLOT_LEN = 30                    # X adjustment range
@@ -119,7 +132,7 @@ STANDOFF_X_INNER = (
 )
 STANDOFF_X_OUTER = STANDOFF_X_INNER - STANDOFF_SPAN
 
-# ---- bearing housing (two-part sleeve, M4 clamp from below) ---- #
+# ---- bearing housing (two-part sleeve + washer, M4 clamp from below) ---- #
 M4_BOLT_CLEARANCE_D = 4.5
 
 # M4 hex nut drops into the upper sleeve top flange from above.
@@ -136,14 +149,19 @@ UPPER_STEM1_D = 6                # in the shoe slot
 UPPER_TOP_FLANGE_D = 15          # sits on shoe body top
 UPPER_TOP_FLANGE_T = 5           # 1.5 mm solid base + 3.5 mm nut pocket
 
-# Lower sleeve: bottom flange → bore stem (full bearing height) → upper step.
-# Installs from below; upper step contacts shoe bottom and bearing inner race top.
+# Lower sleeve: bottom flange + bore stem (full bearing height, no step).
+# Step is replaced by the separate washer so the bearing can slide on freely.
 LOWER_FLANGE_D = 14              # below bearing inner race
 LOWER_FLANGE_T = 1.5
 LOWER_STEM_D = 7.8               # through 608 bore (Ø8), full height
 LOWER_STEM_L = BEARING_THK       # = 7.0; fills bore end-to-end
-LOWER_STEP_D = 14                # thrust step above bearing inner race
-LOWER_STEP_T = 1.5               # step thickness; contacts shoe bottom from below
+
+# Washer: sits on top of bearing inner race, below shoe bottom.
+# Provides the thrust surface contacting shoe bottom from below.
+# Kept separate from the lower sleeve so assembly is possible.
+WASHER_OD = 14                   # contacts bearing inner race only (OD < outer race ID ~16)
+WASHER_T = 1.5
+# Washer bore reuses M4_BOLT_CLEARANCE_D.
 
 OUT = Path(__file__).parent / "out"
 
@@ -182,14 +200,25 @@ def build_shoe():
         SlotOverall(SHOE_L, SHOE_W)
     shoe = extrude(sk.sketch, amount=SHOE_T)
 
-    # Surround region: cut the entire front section (+X end) away, then add
-    # back a Ø SURROUND_BOSS_D × SURROUND_HEIGHT snout at the bit hole center.
+    # Surround region: cut the entire front section (+X end) of the shoe body
+    # away, then add back a half-stadium snout (flat back, semicircular front).
     surround_x_start = SURROUND_X - SURROUND_LEN / 2
     shoe -= Pos(surround_x_start - 0.1, 0, -0.1) * Box(
         SURROUND_LEN + SHOE_W / 2 + 0.2,   # extends past the stadium tip
         SHOE_W + 2,
         SHOE_T + 0.2,
         align=(Align.MIN, Align.CENTER, Align.MIN),
+    )
+
+    # Half-stadium snout: rectangle from the flat back face to the semicircle
+    # center, plus a full cylinder at the semicircle center.  The union gives
+    # a D-shape — flat back at surround_x_start, rounded front at SURROUND_X.
+    # Connection to the shoe body is the full SURROUND_BOSS_D width (vs. the
+    # narrow tangent line of a circular snout), giving a stronger joint.
+    snout_rect_l = SURROUND_LEN / 2   # = 7 mm rectangle portion
+    shoe += Pos(surround_x_start + snout_rect_l / 2, 0, 0) * Box(
+        snout_rect_l, SURROUND_BOSS_D, SURROUND_HEIGHT,
+        align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
     shoe += Pos(SURROUND_X, 0, 0) * Cylinder(
         radius=SURROUND_BOSS_D / 2, height=SURROUND_HEIGHT,
@@ -221,7 +250,7 @@ def build_shoe():
 
 
 def build_upper_sleeve():
-    # Stack (local z=0 = bottom of Stem 1, which sits at shoe bottom = world z=0):
+    # Stack (local z=0 = bottom of Stem 1, sits at shoe bottom = world z=0):
     # Stem 1 (in slot) → Top flange (hex nut pocket opens upward).
     body = Cylinder(
         radius=UPPER_STEM1_D / 2, height=SHOE_T,
@@ -253,9 +282,9 @@ def build_upper_sleeve():
 
 def build_lower_sleeve():
     # Stack (local z=0 = bottom of bottom flange):
-    # Bottom flange → bore stem (full bearing height) → upper step.
-    # Upper step top contacts shoe bottom (world z=0) from below;
-    # bore stem fills the 608 bore end-to-end.
+    # Bottom flange → bore stem (full bearing height).
+    # No upper step — that thrust function is handled by the separate washer,
+    # which allows the bearing to slide freely onto the stem during assembly.
     body = Cylinder(
         radius=LOWER_FLANGE_D / 2, height=LOWER_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
@@ -264,14 +293,23 @@ def build_lower_sleeve():
         radius=LOWER_STEM_D / 2, height=LOWER_STEM_L,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
-    stem_top = LOWER_FLANGE_T + LOWER_STEM_L
-    body += Pos(0, 0, stem_top) * Cylinder(
-        radius=LOWER_STEP_D / 2, height=LOWER_STEP_T,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
-    )
-    total_h = stem_top + LOWER_STEP_T
+    total_h = LOWER_FLANGE_T + LOWER_STEM_L
     body -= Pos(0, 0, -0.1) * Cylinder(
         radius=M4_BOLT_CLEARANCE_D / 2, height=total_h + 0.2,
+        align=(Align.CENTER, Align.CENTER, Align.MIN),
+    )
+    return body
+
+
+def build_washer():
+    # Flat ring: sits on bearing inner race top, below shoe bottom.
+    # Provides the thrust surface that clamps the shoe from below.
+    body = Cylinder(
+        radius=WASHER_OD / 2, height=WASHER_T,
+        align=(Align.CENTER, Align.CENTER, Align.MIN),
+    )
+    body -= Pos(0, 0, -0.1) * Cylinder(
+        radius=M4_BOLT_CLEARANCE_D / 2, height=WASHER_T + 0.2,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
     return body
@@ -288,6 +326,7 @@ def main() -> None:
     shoe = build_shoe()
     upper_sleeve = build_upper_sleeve()
     lower_sleeve = build_lower_sleeve()
+    washer = build_washer()
 
     export_step(plate, str(OUT / "plate.step"))
     export_stl(plate, str(OUT / "plate.stl"))
@@ -297,6 +336,8 @@ def main() -> None:
     export_stl(upper_sleeve, str(OUT / "upper_sleeve.stl"))
     export_step(lower_sleeve, str(OUT / "lower_sleeve.step"))
     export_stl(lower_sleeve, str(OUT / "lower_sleeve.stl"))
+    export_step(washer, str(OUT / "washer.step"))
+    export_stl(washer, str(OUT / "washer.stl"))
     print(f"Exported: {sorted(p.name for p in OUT.iterdir())}")
 
     # ---- assembly preview (world frame = shoe-local) ---- #
@@ -304,17 +345,14 @@ def main() -> None:
     bearing_x = SLOT_X_CENTER
 
     # Upper sleeve: local z=0 at shoe bottom (world z=0); flange above shoe top.
-    upper_z_base = 0
-    upper_assembled = Pos(bearing_x, 0, upper_z_base) * upper_sleeve
+    upper_assembled = Pos(bearing_x, 0, 0) * upper_sleeve
 
-    # Lower sleeve: upper step top at world z=0 (shoe bottom).
-    # Lower sleeve local z=0 is at bottom of bottom flange.
-    lower_z_base = -(LOWER_STEP_T + LOWER_STEM_L + LOWER_FLANGE_T)
-    lower_assembled = Pos(bearing_x, 0, lower_z_base) * lower_sleeve
+    # Washer top = shoe bottom = world z=0; washer sits on bearing inner race top.
+    washer_z_base = -WASHER_T
+    washer_assembled = Pos(bearing_x, 0, washer_z_base) * washer
 
-    # Bearing: inner race top at z = -LOWER_STEP_T (= bearing sits just below
-    # the shoe bottom). The bearing outer race rolls on the work edge below z=0.
-    bearing_top_z = -LOWER_STEP_T
+    # Bearing: inner race top at z = -WASHER_T; outer race rolls on work edge.
+    bearing_top_z = -WASHER_T
     bearing_bottom_z = bearing_top_z - BEARING_THK
     bearing_ghost = Cylinder(
         radius=BEARING_OD / 2, height=BEARING_THK,
@@ -325,6 +363,10 @@ def main() -> None:
     )
     bearing_ghost = Pos(bearing_x, 0, bearing_bottom_z) * bearing_ghost
 
+    # Lower sleeve: bore stem top at bearing_top_z; flange below bearing.
+    lower_z_base = bearing_bottom_z - LOWER_FLANGE_T
+    lower_assembled = Pos(bearing_x, 0, lower_z_base) * lower_sleeve
+
     # Plate: floats above the shoe at STANDOFF_VIS_H, threaded bore over bit hole.
     plate_assembled = Pos(
         SURROUND_X - THREAD_X, 0, SHOE_T + STANDOFF_VIS_H
@@ -334,8 +376,9 @@ def main() -> None:
         from ocp_vscode import show
         show(
             plate_assembled, shoe, upper_assembled, lower_assembled,
-            bearing_ghost,
-            names=["plate", "shoe", "upper_sleeve", "lower_sleeve", "bearing"],
+            washer_assembled, bearing_ghost,
+            names=["plate", "shoe", "upper_sleeve", "lower_sleeve",
+                   "washer", "bearing"],
         )
         print("Sent to OCP CAD Viewer.")
     except ImportError:

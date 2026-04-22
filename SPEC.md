@@ -1,4 +1,4 @@
-# Purfling Cutter — Design Spec (v0.3)
+# Purfling Cutter — Design Spec (v0.4)
 
 A 3D-printed jig that holds a Dremel rotary tool over a stringed-instrument
 top so a cutter bit can rout a constant-distance channel from the edge,
@@ -16,9 +16,10 @@ of scope here.
 | Part            | Function                                                                 | Source                  |
 |-----------------|--------------------------------------------------------------------------|-------------------------|
 | `plate`         | Holds the Dremel via a 3/4"-12 UN internal thread.                       | `build_plate()`         |
-| `shoe`          | Stadium-shaped body sitting flat on the work (z=0–SHOE_T). Front (surround) region is cut to a Ø16 × 4 mm snout — the only contact patch. Houses the bit hole, the stadium-shaped bearing slot, and standoff bolt holes. | `build_shoe()` |
+| `shoe`          | Stadium-shaped body sitting flat on the work (z=0–SHOE_T). Front (surround) region is cut to a half-stadium snout (flat back, Ø16 semicircular front, 4 mm tall) — the only contact patch. Houses the bit hole, the stadium-shaped bearing slot, and standoff bolt holes. | `build_shoe()` |
 | `upper_sleeve`  | Drops into the shoe slot from above (Stem 1 + top flange); top flange carries the captive M4 hex nut (drops in from above). | `build_upper_sleeve()` |
-| `lower_sleeve`  | Installs from below; bottom flange under bearing inner race, bore stem through full bearing height, upper step contacts shoe bottom from below. | `build_lower_sleeve()` |
+| `lower_sleeve`  | Installs from below; bottom flange under bearing inner race, bore stem through full bearing height. No upper step — bearing slides freely onto stem during assembly. | `build_lower_sleeve()` |
+| `washer`        | Flat ring (Ø14 × 1.5 mm, M4 clearance bore). Sits on bearing inner race top below the shoe; provides the thrust surface that clamps the shoe from below. Placed after bearing is assembled onto lower sleeve. | `build_washer()` |
 | 608 bearing     | Edge follower (Ø22 OD × Ø8 bore × 7 mm).                                 | sourced                 |
 | M4 bolt         | Clamps the sleeve stack from below into the upper sleeve's captive nut.   | sourced (M4 × ~25)      |
 | M4 hex nut      | Drops into the hex pocket in the upper sleeve top flange from above.     | sourced (7 mm AF × 3.2) |
@@ -66,9 +67,11 @@ SIDE VIEW (+Y in):
 ```
 
 1. **Surround** (+X end). The front region of the shoe body (X extent
-   `SURROUND_LEN` = 14) is cut to a single Ø `SURROUND_BOSS_D` = 16 cylinder
-   of height `SURROUND_HEIGHT` = 4. This snout is the **only** intentional
-   contact patch with the work. The bit hole goes through the snout.
+   `SURROUND_LEN` = 14) is cut to a **half-stadium** snout: flat back face at
+   the surround region edge, semicircular front of radius `SURROUND_BOSS_D`/2
+   = 8, height `SURROUND_HEIGHT` = 4. The flat back gives a 16 mm-wide joint
+   to the shoe body (vs. the ~8 mm tangent contact of a circular snout),
+   improving stiffness. The bit hole goes through the snout at `SURROUND_X`.
 2. **Bearing channel** (middle). Stadium-shaped slot cut **through the
    full thickness** of the shoe body. The upper sleeve's Stem 1 drops into
    this slot from above. Sliding it along X before tightening sets the
@@ -95,10 +98,23 @@ into a pocket in the upper sleeve's top flange from above.
 
 - **Bottom flange** (Ø `LOWER_FLANGE_D` = 14): under the bearing inner race.
 - **Bore stem** (Ø `LOWER_STEM_D` = 7.8, length `LOWER_STEM_L` =
-  `BEARING_THK` = 7.0): fills the bearing bore end-to-end.
-- **Upper step** (Ø `LOWER_STEP_D` = 14, thickness `LOWER_STEP_T` = 1.5):
-  above the bore stem; rests on the bearing inner race top and contacts the
-  shoe bottom face (z = 0) from below, clamping the shoe.
+  `BEARING_THK` = 7.0): fills the bearing bore end-to-end. No upper step —
+  the bearing slides freely onto the stem from above during assembly.
+
+### Washer
+
+- Ø `WASHER_OD` = 14, thickness `WASHER_T` = 1.5, M4 clearance bore.
+- Placed on the bearing inner race top after the bearing is assembled onto the
+  lower sleeve. Provides the thrust surface that contacts the shoe bottom (z = 0)
+  from below.
+
+### Assembly sequence
+
+1. Bearing slides down onto lower sleeve bore stem from above (stem Ø7.8, bore Ø8).
+2. Washer placed on bearing inner race top.
+3. Sub-assembly (lower sleeve + bearing + washer) raised to the shoe slot from below.
+4. Upper sleeve dropped through the slot from above (Stem 1 in slot, flange on top).
+5. M4 bolt inserted from below; threaded into captive hex nut in upper flange.
 
 ### Stack (bottom → top)
 
@@ -106,8 +122,8 @@ into a pocket in the upper sleeve's top flange from above.
 M4 bolt head
   → lower_sleeve bottom flange  (under bearing inner race)
   → lower_sleeve bore stem      (fills bearing bore)
-  → lower_sleeve upper step     (contacts shoe bottom from below)
-  → shoe body bottom face       (slot edges clamped between step and upper flange)
+  → washer                      (on bearing inner race top; contacts shoe bottom)
+  → shoe body bottom face       (slot edges clamped between washer and upper flange)
   → upper_sleeve Stem 1         (in the slot)
   → shoe body top face
   → upper_sleeve top flange     (hex pocket holds captive M4 nut)
@@ -115,20 +131,17 @@ M4 bolt head
 
 ### Clamping
 
-- **Bearing**: inner race compressed between upper step (above, on lower sleeve)
-  and bottom flange (below, on lower sleeve). Outer race is untouched and
-  rotates freely.
+- **Bearing**: inner race compressed between washer (above) and lower sleeve
+  bottom flange (below). Outer race is untouched and rotates freely.
 - **Shoe**: clamped between the upper sleeve's **top flange (above)** and the
-  lower sleeve's **upper step (below)**. Tightening the M4 bolt pulls the lower
-  sleeve up, pressing the step against the shoe bottom; the upper sleeve's
-  flange resists from above.
+  **washer (below)**. Tightening the M4 bolt pulls the lower sleeve + washer
+  stack up against the shoe bottom; the upper sleeve's flange resists from above.
 
-### Step / flange diameter rule
+### Washer / flange diameter rule
 
-Both the upper step (Ø `LOWER_STEP_D`) and the bottom flange (Ø `LOWER_FLANGE_D`)
-are sized to overlap the **608 inner race only**: larger than the inner race
-OD (~Ø12) and smaller than the outer race ID (~Ø16). The rotating outer race
-never makes friction contact.
+Both `WASHER_OD` and `LOWER_FLANGE_D` (both = 14) are sized to overlap the
+**608 inner race only**: larger than the inner race OD (~Ø12) and smaller than
+the outer race ID (~Ø16). The rotating outer race never makes friction contact.
 
 ## Dimensions (mm)
 
@@ -202,8 +215,13 @@ nut; the hex walls prevent rotation; the nut is pulled down against the pocket f
 | `LOWER_FLANGE_T` | 1.5   |                                                                  |
 | `LOWER_STEM_D`   | 7.8   | Stem through bearing bore (608 bore = Ø8).                       |
 | `LOWER_STEM_L`   | 7.0   | = BEARING_THK; fills bore end-to-end.                            |
-| `LOWER_STEP_D`   | 14    | Thrust step above bearing inner race; contacts shoe bottom.      |
-| `LOWER_STEP_T`   | 1.5   | Step thickness.                                                  |
+
+### Washer
+
+| Constant     | Value | Notes                                                                |
+|--------------|------:|----------------------------------------------------------------------|
+| `WASHER_OD`  | 14    | Contacts bearing inner race only; clears outer race ID (~Ø16).       |
+| `WASHER_T`   | 1.5   | Thrust thickness between bearing inner race top and shoe bottom.     |
 
 ## Build & verify
 
@@ -212,20 +230,23 @@ uv run python cutter.py
 ```
 
 Produces in `out/`: `plate.{step,stl}`, `shoe.{step,stl}`,
-`upper_sleeve.{step,stl}`, `lower_sleeve.{step,stl}`. If the OCP CAD viewer
-extension is running in VS Code, the script also pushes an assembly preview.
+`upper_sleeve.{step,stl}`, `lower_sleeve.{step,stl}`, `washer.{step,stl}`.
+If the OCP CAD viewer extension is running in VS Code, the script also pushes
+an assembly preview.
 
 Visual checks in the viewer:
 
-- Shoe body spans z = 0 to z = SHOE_T = 8. Surround region is cut to a
-  Ø16 × 4 mm snout at the +X end; the rest of the front is gone.
+- Shoe body spans z = 0 to z = SHOE_T = 8. Surround region is a half-stadium
+  snout (flat back, Ø16 rounded front, 4 mm tall); rest of the front is gone.
 - Stadium-shaped slot passes through the full thickness of the shoe body.
 - Upper sleeve: Stem 1 in the slot, top flange on shoe body top. Hex pocket
   visible (opening upward) inside the top flange.
-- Lower sleeve: step (Ø14) at top flush with shoe bottom (world z=0); bore
-  stem below; bottom flange at the very bottom.
-- Bearing top ≈ z = −LOWER_STEP_T = −1.5; outer race rotates freely; bearing
-  outer race rolls on the work edge below z = 0.
+- Lower sleeve: bore stem top at bearing inner race top; bottom flange below.
+  No step on the lower sleeve.
+- Washer: flat ring between bearing inner race top and shoe bottom (z = −WASHER_T
+  to z = 0).
+- Bearing top ≈ z = −WASHER_T = −1.5; outer race rotates freely; outer race
+  rolls on the work edge below z = 0.
 - M4 bolt clearance line is unobstructed bottom-to-top.
 
 ## Out of scope (next iterations)
@@ -235,4 +256,4 @@ Visual checks in the viewer:
   standoffs use fixed bolts to the shoe.
 - M4 bolt head choice (socket cap vs. knurled thumbscrew for in-use adjustment).
 - Alignment features (dowel pins, etc.) between shoe / standoffs / plate.
-- Assembly sequence for the lower sleeve + bearing (step wider than bore).
+- M4 bolt head choice (socket cap vs. knurled thumbscrew for in-use adjustment).
