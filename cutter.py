@@ -83,7 +83,7 @@ SHOE_T = 8                       # Z thickness
 # Surround snout (half-stadium): flat back, Ø SURROUND_BOSS_D semicircular front.
 SURROUND_HEIGHT = 4              # Z height of snout (z=0 to z=4)
 SURROUND_WALL = 4                # radial material around bit hole
-BIT_HOLE_D = 8                   # router bit clearance
+BIT_HOLE_D = 6                   # router bit clearance
 SURROUND_BOSS_D = BIT_HOLE_D + 2 * SURROUND_WALL  # = 16
 SURROUND_LEN = 14                # X extent of the surround region
 SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: SURROUND_WALL − bit_r − inner_fillet ≈ 3.5)
