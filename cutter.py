@@ -86,6 +86,7 @@ SURROUND_WALL = 4                # radial material around bit hole
 BIT_HOLE_D = 6                   # router bit clearance
 SURROUND_BOSS_D = BIT_HOLE_D + 2 * SURROUND_WALL  # = 16
 SURROUND_LEN = 14                # X extent of the surround region
+SURROUND_OVERLAP = 2             # snout rect extends back into shoe body by this much so the union is a solid weld (prints as one object)
 SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: SURROUND_WALL − bit_r − inner_fillet ≈ 3.5)
 SURROUND_FILLET_IN = 0.5         # bit hole bottom edge
 
@@ -204,10 +205,13 @@ def build_shoe():
         SHOE_T + 0.2,
         align=(Align.MIN, Align.CENTER, Align.MIN),
     )
-    snout_rect_l = SURROUND_LEN / 2
-    shoe += Pos(surround_x_start + snout_rect_l / 2, 0, 0) * Box(
+    # Snout rect spans from (surround_x_start - SURROUND_OVERLAP) to SURROUND_X
+    # so it pushes back into the remaining body and unions solidly, instead of
+    # leaving the 0.1 mm gap from the cut tolerance.
+    snout_rect_l = SURROUND_LEN / 2 + SURROUND_OVERLAP
+    shoe += Pos(surround_x_start - SURROUND_OVERLAP, 0, 0) * Box(
         snout_rect_l, SURROUND_BOSS_D, SURROUND_HEIGHT,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
+        align=(Align.MIN, Align.CENTER, Align.MIN),
     )
     shoe += Pos(SURROUND_X, 0, 0) * Cylinder(
         radius=SURROUND_BOSS_D / 2, height=SURROUND_HEIGHT,
