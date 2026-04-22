@@ -137,7 +137,8 @@ adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 | `SURROUND_HEIGHT`  | 4       | Z height of surround snout (z=0 to z=4).                              |
 | `SURROUND_WALL`    | 4       | Radial material around bit hole.                                       |
 | `SURROUND_BOSS_D`  | 14      | Derived: BIT_HOLE_D + 2·SURROUND_WALL.                                |
-| `SURROUND_LEN`     | 14      | X extent of surround region. Rectangle portion = SURROUND_LEN/2 = 7.  |
+| `SURROUND_LEN`     | 14      | X extent of surround region (visible). Rectangle portion = SURROUND_LEN/2 = 7 outside the body. |
+| `SURROUND_OVERLAP` | 2       | Snout rectangle extends this far back into the shoe body past the front cut plane so the union is a single solid (no 0.1 mm gap from cut tolerance; prints as one piece). |
 | `SURROUND_FILLET_OUT` | 3.4  | Fillet on outer bottom perimeter of snout. Max before colliding with the inner fillet at the cap (SURROUND_WALL − bit_r − SURROUND_FILLET_IN − margin). |
 | `SURROUND_FILLET_IN`  | 0.5  | Fillet on bit hole bottom edge (smooth bit entry). |
 | `BIT_HOLE_D`       | 6       | Router bit clearance.                                                  |
