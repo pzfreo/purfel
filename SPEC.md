@@ -165,7 +165,7 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 | `UPPER_STEM1_D`      | 6     | Stadium stem Y-width (fits SLOT_W=6.5 with ~0.25 mm/side). Minimum cross-section; unchanged from circular version. |
 | `UPPER_STEM1_LEN`    | 9     | Stadium stem X-length. Flat face on the −X (bolt) side keys into the slot wall and prevents rotation. |
 | `UPPER_STEM1_OFFSET` | (UPPER_STEM1_LEN − UPPER_STEM1_D) / 2 = 1.5 | Stadium is shifted −X by this amount so the M4 hole sits at the +X cap centre. The +X (bit-side) edge of the stadium therefore matches the original circle's +X edge, preserving the minimum bearing-to-bit distance. All extra material is added on the bolt side. |
-| `UPPER_TOP_FLANGE_D` | 15    | Sits on shoe body top.                              |
+| `UPPER_TOP_FLANGE_D` | 13    | Sits on shoe body top.                              |
 | `UPPER_TOP_FLANGE_T` | 5     | 1.5 mm solid base + 3.5 mm nut pocket from top.    |
 
 ### Lower sleeve
@@ -183,7 +183,7 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 |-----------------|------:|-----------------------------------------------------------------------|
 | `STANDOFF_H`      | 23    | Height (shoe top → plate bottom). Sets the plate-to-shoe gap.       |
 | `STANDOFF_CLEARANCE` | 2  | Total margin from hard limits (1 mm each end).                      |
-| `STANDOFF_W`      | derived | `min(shoe-end limit, flange limit) − STANDOFF_CLEARANCE = 18 mm`. Constrained so the −X end cap stays 1 mm inside the shoe back wall and the +X end cap stays 1 mm clear of the upper sleeve flange. Wall ≈ 5.75 mm each side of bolt hole. Stadium length = STANDOFF_SPAN + STANDOFF_W = 38 mm. |
+| `STANDOFF_W`      | derived | `min(shoe-end limit, flange limit) − STANDOFF_CLEARANCE = 16 mm`. Constrained so the −X end cap stays 1 mm inside the shoe back wall and the +X end cap stays 1 mm clear of the upper sleeve flange **at maximum bearing-to-bit distance** (bearing slid to −X slot limit, `BEARING_X_MIN`). Wall ≈ 4.5 mm each side of bolt hole. Stadium length = STANDOFF_SPAN + STANDOFF_W = 36 mm. |
 | `STANDOFF_HOLE_D` | M6_BOLT_CLEARANCE_D + 0.5 = 7.0 | Bolt clearance in standoff; 0.5 mm extra over shoe/plate holes for easy bolt passage. |
 
 Bolt holes centred at ±`STANDOFF_SPAN/2` (= ±10 mm) from the standoff's geometric centre, which sits at `(STANDOFF_X_INNER + STANDOFF_X_OUTER) / 2` in shoe coords.
