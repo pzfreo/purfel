@@ -163,7 +163,8 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 | Constant             | Value | Notes                                               |
 |----------------------|------:|-----------------------------------------------------|
 | `UPPER_STEM1_D`      | 6     | Stadium stem Y-width (fits SLOT_W=6.5 with ~0.25 mm/side). Minimum cross-section; unchanged from circular version. |
-| `UPPER_STEM1_LEN`    | 9     | Stadium stem X-length. Flat sides (1.5 mm each side of M4 hole) key into slot walls and prevent rotation when bolt is tightened or loosened. M4 hole is centred in the stadium (offset 1.5 mm from each flat end). Reduces X adjustment range from 8.5 mm → 5.5 mm total. |
+| `UPPER_STEM1_LEN`    | 9     | Stadium stem X-length. Flat face on the −X (bolt) side keys into the slot wall and prevents rotation. |
+| `UPPER_STEM1_OFFSET` | (UPPER_STEM1_LEN − UPPER_STEM1_D) / 2 = 1.5 | Stadium is shifted −X by this amount so the M4 hole sits at the +X cap centre. The +X (bit-side) edge of the stadium therefore matches the original circle's +X edge, preserving the minimum bearing-to-bit distance. All extra material is added on the bolt side. |
 | `UPPER_TOP_FLANGE_D` | 15    | Sits on shoe body top.                              |
 | `UPPER_TOP_FLANGE_T` | 5     | 1.5 mm solid base + 3.5 mm nut pocket from top.    |
 
@@ -180,9 +181,9 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 
 | Constant        | Value | Notes                                                                 |
 |-----------------|------:|-----------------------------------------------------------------------|
-| `STANDOFF_H`    | 23    | Height (shoe top → plate bottom). Sets the plate-to-shoe gap.        |
-| `STANDOFF_WALL` | 8     | Radial material around each bolt hole.                               |
-| `STANDOFF_W`    | M6_BOLT_CLEARANCE_D + 2·STANDOFF_WALL = 22.5 | Y width; ensures 8 mm wall each side of bolt hole. Stadium length = STANDOFF_SPAN + STANDOFF_W = 42.5 mm. |
+| `STANDOFF_H`      | 23    | Height (shoe top → plate bottom). Sets the plate-to-shoe gap.       |
+| `STANDOFF_CLEARANCE` | 2  | Total margin from hard limits (1 mm each end).                      |
+| `STANDOFF_W`      | derived | `min(shoe-end limit, flange limit) − STANDOFF_CLEARANCE = 18 mm`. Constrained so the −X end cap stays 1 mm inside the shoe back wall and the +X end cap stays 1 mm clear of the upper sleeve flange. Wall ≈ 5.75 mm each side of bolt hole. Stadium length = STANDOFF_SPAN + STANDOFF_W = 38 mm. |
 | `STANDOFF_HOLE_D` | M6_BOLT_CLEARANCE_D + 0.5 = 7.0 | Bolt clearance in standoff; 0.5 mm extra over shoe/plate holes for easy bolt passage. |
 
 Bolt holes centred at ±`STANDOFF_SPAN/2` (= ±10 mm) from the standoff's geometric centre, which sits at `(STANDOFF_X_INNER + STANDOFF_X_OUTER) / 2` in shoe coords.

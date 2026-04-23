@@ -138,6 +138,7 @@ M4_NUT_POCKET_T = 3.5
 
 UPPER_STEM1_D = 6
 UPPER_STEM1_LEN = 9              # X extent of stadium stem; flat sides prevent rotation in slot
+UPPER_STEM1_OFFSET = (UPPER_STEM1_LEN - UPPER_STEM1_D) / 2  # stadium shifted -X so hole sits at +X cap centre
 UPPER_TOP_FLANGE_D = 15
 UPPER_TOP_FLANGE_T = 5
 
@@ -151,8 +152,12 @@ WASHER_T = 1.5
 
 # ---- standoff ---- #
 STANDOFF_H = 23                  # plate-to-shoe gap (shoe top → plate bottom)
-STANDOFF_WALL = 8                # material around each bolt hole
-STANDOFF_W = M6_BOLT_CLEARANCE_D + 2 * STANDOFF_WALL   # = 22.5 mm
+STANDOFF_CLEARANCE = 2           # total margin kept from both hard limits (1 mm each end)
+# Width is the smaller of: (a) flush with shoe back wall, (b) clear of upper sleeve flange.
+STANDOFF_W = min(
+    2 * (SHOE_L / 2 + STANDOFF_X_OUTER),                              # shoe-end limit
+    2 * (SLOT_X_CENTER - UPPER_TOP_FLANGE_D / 2 - STANDOFF_X_INNER), # flange limit
+) - STANDOFF_CLEARANCE           # = 18 mm; wall ≈ 5.75 mm each side
 STANDOFF_HOLE_D = M6_BOLT_CLEARANCE_D + 0.5             # extra clearance for standoff bolt passage
 
 OUT = Path(__file__).parent / "out"
@@ -281,7 +286,9 @@ def build_shoe():
 def build_upper_sleeve():
     with BuildSketch() as stem_sk:
         SlotOverall(UPPER_STEM1_LEN, UPPER_STEM1_D)
-    body = extrude(stem_sk.sketch, amount=SHOE_T)
+    # Shift stadium toward -X so its +X edge aligns with the original circle's +X edge.
+    # Extra material goes toward the bolt side; bit-side extent is unchanged.
+    body = Pos(-UPPER_STEM1_OFFSET, 0, 0) * extrude(stem_sk.sketch, amount=SHOE_T)
     body += Pos(0, 0, SHOE_T) * Cylinder(
         radius=UPPER_TOP_FLANGE_D / 2, height=UPPER_TOP_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
