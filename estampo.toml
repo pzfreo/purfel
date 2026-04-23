@@ -16,7 +16,7 @@ filaments = ["Bambu PETG-CF @BBL X1C 0.4 nozzle"]
 
 [slicer.orca.overrides]
 # Strength — high wall count + gyroid infill for isotropic strength
-wall_loops            = "5"
+wall_loops            = "6"
 sparse_infill_density = "40%"
 sparse_infill_pattern = "gyroid"
 top_shell_layers      = "6"
@@ -52,6 +52,10 @@ orient = "upright"
 
 [[parts]]
 file   = "out/washer.step"
+orient = "upright"
+
+[[parts]]
+file   = "out/standoff.step"
 orient = "upright"
 
 [pack]
