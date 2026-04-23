@@ -32,7 +32,7 @@ Shoe-local frame is the world frame for the assembly.
 - **+X**: long axis of the shoe (surround at +X end, standoffs at −X end).
 - **+Y**: short axis (width).
 - **+Z**: up. **z = 0 is the bottom face of the shoe**, which rests on the
-  workpiece. Shoe body spans z = 0 to z = `SHOE_T` (= 8). The surround snout
+  workpiece. Shoe body spans z = 0 to z = `SHOE_T` (= 11). The surround snout
   spans z = 0 to z = `SURROUND_HEIGHT` (= 4); the rest of the front is cut away.
 
 ## Shoe layout
@@ -48,7 +48,7 @@ TOP VIEW (+Z down):
 
 SIDE VIEW:
 +----- bolt holes w/ countersinks ------+-- snout ---+
-|  v    v    [ stadium slot ]           |   snout    |  z = SHOE_T = 8
+|  v    v    [ stadium slot ]           |   snout    |  z = SHOE_T = 11
 |  v    v                               |            |  z = SURROUND_HEIGHT = 4
 |_______________________________________+            |  z = 0 (work surface)
   bolt heads flush at z=0                            |
@@ -118,7 +118,7 @@ M4 bolt head
 | `PLATE_L`           | derived | `SURROUND_X − STANDOFF_X_OUTER + PLATE_W/2 + PLATE_BACK_WALL`. Parametric: always just long enough to span thread bore (+X semicircle) to outer nut pocket with ≥6 mm wall from hole edge. Currently ≈82.25 mm. |
 | `PLATE_BACK_WALL`   | 10    | Outer nut pocket centre → plate back edge (gives ≈6.15 mm wall from hole edge). |
 | `PLATE_W`           | 30    | Y                                                                     |
-| `PLATE_T`           | 10    | Z; 5 mm nut pocket + 5 mm solid below.                               |
+| `PLATE_T`           | 11    | Z; 5.2 mm nut pocket + 5.8 mm solid below.                           |
 | `THREAD_MAJOR`      | 19.05 | Dremel 3/4"-12 UN major Ø                                            |
 | `THREAD_PITCH`      | 25.4/12 | ≈ 2.117 mm                                                          |
 | `THREAD_X`          | derived | = PLATE_L/2 − PLATE_W/2; bore centre on +X semicircle. Currently ≈26.125 mm. |
@@ -135,7 +135,7 @@ adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 | Constant           | Value   | Notes                                                                  |
 |--------------------|--------:|------------------------------------------------------------------------|
 | `SHOE_W`           | 30      | Y. Matches PLATE_W.                                                    |
-| `SHOE_T`           | 8       | Z thickness.                                                           |
+| `SHOE_T`           | 11      | Z thickness.                                                           |
 | `SURROUND_HEIGHT`  | 4       | Z height of surround snout (z=0 to z=4).                              |
 | `SURROUND_WALL`    | 4       | Radial material around bit hole.                                       |
 | `SURROUND_BOSS_D`  | 14      | Derived: BIT_HOLE_D + 2·SURROUND_WALL.                                |
