@@ -138,6 +138,7 @@ M4_NUT_POCKET_T = 3.5
 
 UPPER_STEM1_D = 6
 UPPER_STEM1_LEN = 9              # X extent of stadium stem; flat sides prevent rotation in slot
+UPPER_STEM1_OFFSET = (UPPER_STEM1_LEN - UPPER_STEM1_D) / 2  # stadium shifted -X so hole sits at +X cap centre
 UPPER_TOP_FLANGE_D = 15
 UPPER_TOP_FLANGE_T = 5
 
@@ -285,7 +286,9 @@ def build_shoe():
 def build_upper_sleeve():
     with BuildSketch() as stem_sk:
         SlotOverall(UPPER_STEM1_LEN, UPPER_STEM1_D)
-    body = extrude(stem_sk.sketch, amount=SHOE_T)
+    # Shift stadium toward -X so its +X edge aligns with the original circle's +X edge.
+    # Extra material goes toward the bolt side; bit-side extent is unchanged.
+    body = Pos(-UPPER_STEM1_OFFSET, 0, 0) * extrude(stem_sk.sketch, amount=SHOE_T)
     body += Pos(0, 0, SHOE_T) * Cylinder(
         radius=UPPER_TOP_FLANGE_D / 2, height=UPPER_TOP_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
