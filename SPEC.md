@@ -14,7 +14,7 @@ two M6 flat-head bolts.
 
 | Part            | Function                                                                 | Source                  |
 |-----------------|--------------------------------------------------------------------------|-------------------------|
-| `plate`         | Holds the Dremel via a 3/4"-12 UN internal thread. Two M6 heat-set inserts in the bottom face accept the M6 bolts rising from the shoe. No longitudinal channel. | `build_plate()` |
+| `plate`         | Holds the Dremel via a 3/4"-12 UN internal thread. Two M6 hex nut pockets in the top face accept captive nuts; M6 bolts rise from the shoe through the standoff and plate into the nuts. No longitudinal channel. | `build_plate()` |
 | `shoe`          | Stadium-shaped body sitting flat on the work (z=0–SHOE_T). Front is a half-stadium snout (the only contact patch). Two M6 flat-head bolt holes with Ø12 × 4 mm countersinks on the shoe bottom accept the bolts (heads flush at z=0). Stadium-shaped bearing slot in the middle. | `build_shoe()` |
 | `upper_sleeve`  | Stem 1 + top flange with captive M4 hex nut (drops in from above).      | `build_upper_sleeve()`  |
 | `lower_sleeve`  | Bottom flange + bore stem (no step). Bearing slides onto stem freely.   | `build_lower_sleeve()`  |
@@ -22,7 +22,8 @@ two M6 flat-head bolts.
 | 608 bearing     | Edge follower (Ø22 OD × Ø8 bore × 7 mm).                                | sourced                 |
 | M4 bolt         | Clamps bearing sleeve from below into upper sleeve's captive nut.        | sourced (M4 × ~25)      |
 | M4 hex nut      | Captive in upper sleeve top flange (drops in from above).               | sourced (7 mm AF × 3.2) |
-| M6 flat-head bolt × 2 | Rises from shoe through plate into heat-set insert; clamps plate to shoe. | sourced (M6 × ~20) |
+| `standoff`      | Single stadium-shaped spacer spanning both M6 bolt positions. Sits on shoe top face; sets the plate-to-shoe gap to `STANDOFF_H`. Two M6 clearance bores. | `build_standoff()` |
+| M6 flat-head bolt × 2 | Rises from shoe through standoff and plate into captive nut; clamps plate to shoe at fixed gap. | sourced (M6 × 45 mm flat-head) |
 
 ## Coordinate system
 
@@ -114,17 +115,17 @@ M4 bolt head
 
 | Constant            | Value | Notes                                                                 |
 |---------------------|------:|-----------------------------------------------------------------------|
-| `PLATE_L`           | derived | `SURROUND_X − STANDOFF_X_OUTER + PLATE_W/2 + PLATE_BACK_WALL`. Parametric: always just long enough to span thread bore (+X semicircle) to outer insert with ≥6 mm wall from hole edge. Currently ≈82.25 mm. |
-| `PLATE_BACK_WALL`   | 10    | Outer insert centre → plate back edge (gives ≈6.15 mm wall from hole edge). |
+| `PLATE_L`           | derived | `SURROUND_X − STANDOFF_X_OUTER + PLATE_W/2 + PLATE_BACK_WALL`. Parametric: always just long enough to span thread bore (+X semicircle) to outer nut pocket with ≥6 mm wall from hole edge. Currently ≈82.25 mm. |
+| `PLATE_BACK_WALL`   | 10    | Outer nut pocket centre → plate back edge (gives ≈6.15 mm wall from hole edge). |
 | `PLATE_W`           | 30    | Y                                                                     |
-| `PLATE_T`           | 11    | Z; thickened from 10 to take 10 mm inserts with 1 mm base            |
+| `PLATE_T`           | 10    | Z; 5 mm nut pocket + 5 mm solid below.                               |
 | `THREAD_MAJOR`      | 19.05 | Dremel 3/4"-12 UN major Ø                                            |
 | `THREAD_PITCH`      | 25.4/12 | ≈ 2.117 mm                                                          |
 | `THREAD_X`          | derived | = PLATE_L/2 − PLATE_W/2; bore centre on +X semicircle. Currently ≈26.125 mm. |
-| `M6_INSERT_OD`      | 8.0   | Heat-set insert OD                                                    |
-| `M6_INSERT_L`       | 10.0  | Insert length (hole is through-plate for easy bolt passage)           |
-| `M6_INSERT_HOLE_D`  | 7.7   | Bore for insert (0.15 mm interference/side for heat-set fit)         |
-| `M6_INSERT_CHAMFER` | 0.5   | Entry chamfer on plate bottom face                                    |
+| `M6_NUT_AF`         | 10.0  | M6 hex nut across-flats (ISO 4032)                                   |
+| `M6_NUT_T`          | 5.0   | M6 hex nut thickness                                                  |
+| `M6_NUT_POCKET_AF`  | 10.2  | Pocket AF (0.1 mm clearance per flat)                                |
+| `M6_NUT_POCKET_T`   | 5.2   | Pocket depth (0.2 mm clearance on nut thickness); entered from plate top face. |
 
 Insert X positions are derived in `build_plate()` from shoe standoff positions
 adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
@@ -174,6 +175,17 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 | `LOWER_FLANGE_T` | 1.5   |                                                      |
 | `LOWER_STEM_D`   | 7.8   | Through 608 bore (Ø8), full height.                  |
 | `LOWER_STEM_L`   | 7.0   | = BEARING_THK; fills bore end-to-end.                |
+
+### Standoff
+
+| Constant        | Value | Notes                                                                 |
+|-----------------|------:|-----------------------------------------------------------------------|
+| `STANDOFF_H`    | 23    | Height (shoe top → plate bottom). Sets the plate-to-shoe gap.        |
+| `STANDOFF_WALL` | 8     | Radial material around each bolt hole.                               |
+| `STANDOFF_W`    | M6_BOLT_CLEARANCE_D + 2·STANDOFF_WALL = 22.5 | Y width; ensures 8 mm wall each side of bolt hole. Stadium length = STANDOFF_SPAN + STANDOFF_W = 42.5 mm. |
+| `STANDOFF_HOLE_D` | M6_BOLT_CLEARANCE_D + 0.5 = 7.0 | Bolt clearance in standoff; 0.5 mm extra over shoe/plate holes for easy bolt passage. |
+
+Bolt holes centred at ±`STANDOFF_SPAN/2` (= ±10 mm) from the standoff's geometric centre, which sits at `(STANDOFF_X_INNER + STANDOFF_X_OUTER) / 2` in shoe coords.
 
 ### Washer
 
