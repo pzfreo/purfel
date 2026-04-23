@@ -114,12 +114,13 @@ M4 bolt head
 
 | Constant            | Value | Notes                                                                 |
 |---------------------|------:|-----------------------------------------------------------------------|
-| `PLATE_L`           | 100   | Extended from 90 to give ≥6 mm wall around outer insert hole         |
+| `PLATE_L`           | derived | `SURROUND_X − STANDOFF_X_OUTER + PLATE_W/2 + PLATE_BACK_WALL`. Parametric: always just long enough to span thread bore (+X semicircle) to outer insert with ≥6 mm wall from hole edge. Currently ≈82.25 mm. |
+| `PLATE_BACK_WALL`   | 10    | Outer insert centre → plate back edge (gives ≈6.15 mm wall from hole edge). |
 | `PLATE_W`           | 30    | Y                                                                     |
 | `PLATE_T`           | 11    | Z; thickened from 10 to take 10 mm inserts with 1 mm base            |
 | `THREAD_MAJOR`      | 19.05 | Dremel 3/4"-12 UN major Ø                                            |
 | `THREAD_PITCH`      | 25.4/12 | ≈ 2.117 mm                                                          |
-| `THREAD_X`          | 35    | = PLATE_L/2 − PLATE_W/2; bore center on +X semicircle               |
+| `THREAD_X`          | derived | = PLATE_L/2 − PLATE_W/2; bore centre on +X semicircle. Currently ≈26.125 mm. |
 | `M6_INSERT_OD`      | 8.0   | Heat-set insert OD                                                    |
 | `M6_INSERT_L`       | 10.0  | Insert length (hole is through-plate for easy bolt passage)           |
 | `M6_INSERT_HOLE_D`  | 7.7   | Bore for insert (0.15 mm interference/side for heat-set fit)         |
@@ -142,14 +143,14 @@ adjusted by `SURROUND_X − THREAD_X` (the plate-to-shoe X alignment offset).
 | `SURROUND_FILLET_OUT` | 3.4  | Fillet on outer bottom perimeter of snout. Max before colliding with the inner fillet at the cap (SURROUND_WALL − bit_r − SURROUND_FILLET_IN − margin). |
 | `SURROUND_FILLET_IN`  | 0.5  | Fillet on bit hole bottom edge (smooth bit entry). |
 | `BIT_HOLE_D`       | 6       | Router bit clearance.                                                  |
-| `SLOT_LEN`         | 15      | Bearing slot X length. Gives bearing-edge-to-bit-edge gap of 1.25–10.25 mm and a 34.25 mm cantilever (inner bolt → bit center). `max_gap = SLOT_LEN − 4.75`; `cantilever = 19.25 + SLOT_LEN`. |
+| `SLOT_LEN`         | 18      | Bearing slot X length. Gives bearing-edge-to-bit-edge gap of 1.25–13.25 mm and a 37.25 mm cantilever (inner bolt → bit center). `max_gap = SLOT_LEN − 4.75`; `cantilever = 19.25 + SLOT_LEN`. |
 | `SLOT_W`           | 6.5     | Slot Y width. Clears UPPER_STEM1_D=6 with ~0.25 mm/side.              |
 | `END_WALL_FRONT`   | 3       | Surround edge → slot edge.                                             |
 | `SLOT_END_WALL`    | 6       | Slot edge → standoff bolt near edge (increased from 3 so Ø12 countersink clears slot by ≥3 mm). |
 | `END_WALL_BACK`    | 10      | Outer bolt center → back of shoe (increased from 6 to keep countersink inside shoe end). |
 | `STANDOFF_BOLT_D`  | 6.5     | = M6_BOLT_CLEARANCE_D.                                                |
 | `STANDOFF_SPAN`    | 20      | Bolt-center to bolt-center.                                            |
-| `SHOE_L`           | 71.25   | Derived. Shrank from 86.25 when SLOT_LEN went 30 → 15.                 |
+| `SHOE_L`           | 74.25   | Derived. Grew from 71.25 when SLOT_LEN went 15 → 18.                   |
 
 **Countersink geometry check**: with SLOT_END_WALL = 6, the distance from inner
 bolt center to slot back edge = 6 + 6.5/2 = 9.25 mm. Countersink radius = 6 mm.
@@ -160,7 +161,8 @@ from outer countersink edge to shoe end = 10 − 6 = 4 mm ✓.
 
 | Constant             | Value | Notes                                               |
 |----------------------|------:|-----------------------------------------------------|
-| `UPPER_STEM1_D`      | 6     | Stem in the shoe slot.                              |
+| `UPPER_STEM1_D`      | 6     | Stadium stem Y-width (fits SLOT_W=6.5 with ~0.25 mm/side). Minimum cross-section; unchanged from circular version. |
+| `UPPER_STEM1_LEN`    | 9     | Stadium stem X-length. Flat sides (1.5 mm each side of M4 hole) key into slot walls and prevent rotation when bolt is tightened or loosened. M4 hole is centred in the stadium (offset 1.5 mm from each flat end). Reduces X adjustment range from 8.5 mm → 5.5 mm total. |
 | `UPPER_TOP_FLANGE_D` | 15    | Sits on shoe body top.                              |
 | `UPPER_TOP_FLANGE_T` | 5     | 1.5 mm solid base + 3.5 mm nut pocket from top.    |
 

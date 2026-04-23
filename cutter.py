@@ -49,14 +49,13 @@ from build123d import (
 from bd_warehouse.thread import IsoThread
 
 # ---- plate ---- #
-PLATE_L = 100                    # extended to 100 so outer insert has ≥6 mm wall
 PLATE_W = 30
 PLATE_T = 11                     # thickened to take 10 mm inserts with 1 mm base
 
 # Dremel 3/4"-12 UN
 THREAD_MAJOR = 19.05
 THREAD_PITCH = 25.4 / 12
-THREAD_X = PLATE_L / 2 - PLATE_W / 2  # bore center on the +X semicircle (= 35)
+# PLATE_L and THREAD_X are derived after shoe constants below.
 
 # M6 heat-set inserts in plate bottom face (M6 × Ø8 OD × 10 mm long).
 M6_INSERT_OD = 8.0
@@ -91,7 +90,7 @@ SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: 
 SURROUND_FILLET_IN = 0.5         # bit hole bottom edge
 
 # Bearing channel
-SLOT_LEN = 15                    # gives bearing-edge-to-bit-edge gap of 1.25–10.25 mm; cantilever = 19.25 + SLOT_LEN
+SLOT_LEN = 18                    # gives bearing-edge-to-bit-edge gap of 1.25–13.25 mm; cantilever = 19.25 + SLOT_LEN
 SLOT_W = 6.5                     # clears UPPER_STEM1_D=6 + ~0.25/side
 
 # Walls — SLOT_END_WALL and END_WALL_BACK sized so Ø12 countersinks clear the
@@ -123,6 +122,12 @@ STANDOFF_X_INNER = (
 )
 STANDOFF_X_OUTER = STANDOFF_X_INNER - STANDOFF_SPAN
 
+# Plate length: just long enough to span from thread bore (+X semicircle) to
+# past the outer insert with ≥6 mm wall from hole edge.
+PLATE_BACK_WALL = 10             # outer insert centre → plate back edge (≈6 mm from hole edge)
+PLATE_L = SURROUND_X - STANDOFF_X_OUTER + PLATE_W / 2 + PLATE_BACK_WALL
+THREAD_X = PLATE_L / 2 - PLATE_W / 2  # bore centre on the +X semicircle
+
 # ---- bearing housing ---- #
 M4_BOLT_CLEARANCE_D = 4.5
 
@@ -132,6 +137,7 @@ M4_NUT_POCKET_AF = 7.2
 M4_NUT_POCKET_T = 3.5
 
 UPPER_STEM1_D = 6
+UPPER_STEM1_LEN = 9              # X extent of stadium stem; flat sides prevent rotation in slot
 UPPER_TOP_FLANGE_D = 15
 UPPER_TOP_FLANGE_T = 5
 
@@ -272,10 +278,9 @@ def build_shoe():
 
 
 def build_upper_sleeve():
-    body = Cylinder(
-        radius=UPPER_STEM1_D / 2, height=SHOE_T,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
-    )
+    with BuildSketch() as stem_sk:
+        SlotOverall(UPPER_STEM1_LEN, UPPER_STEM1_D)
+    body = extrude(stem_sk.sketch, amount=SHOE_T)
     body += Pos(0, 0, SHOE_T) * Cylinder(
         radius=UPPER_TOP_FLANGE_D / 2, height=UPPER_TOP_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
