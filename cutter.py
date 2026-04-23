@@ -151,8 +151,12 @@ WASHER_T = 1.5
 
 # ---- standoff ---- #
 STANDOFF_H = 23                  # plate-to-shoe gap (shoe top → plate bottom)
-STANDOFF_WALL = 8                # material around each bolt hole
-STANDOFF_W = M6_BOLT_CLEARANCE_D + 2 * STANDOFF_WALL   # = 22.5 mm
+STANDOFF_CLEARANCE = 2           # total margin kept from both hard limits (1 mm each end)
+# Width is the smaller of: (a) flush with shoe back wall, (b) clear of upper sleeve flange.
+STANDOFF_W = min(
+    2 * (SHOE_L / 2 + STANDOFF_X_OUTER),                              # shoe-end limit
+    2 * (SLOT_X_CENTER - UPPER_TOP_FLANGE_D / 2 - STANDOFF_X_INNER), # flange limit
+) - STANDOFF_CLEARANCE           # = 18 mm; wall ≈ 5.75 mm each side
 STANDOFF_HOLE_D = M6_BOLT_CLEARANCE_D + 0.5             # extra clearance for standoff bolt passage
 
 OUT = Path(__file__).parent / "out"
