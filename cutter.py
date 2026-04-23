@@ -49,20 +49,19 @@ from build123d import (
 from bd_warehouse.thread import IsoThread
 
 # ---- plate ---- #
-PLATE_L = 100                    # extended to 100 so outer insert has ≥6 mm wall
 PLATE_W = 30
-PLATE_T = 11                     # thickened to take 10 mm inserts with 1 mm base
+PLATE_T = 10                     # 5 mm nut pocket + 5 mm solid below
 
 # Dremel 3/4"-12 UN
 THREAD_MAJOR = 19.05
 THREAD_PITCH = 25.4 / 12
-THREAD_X = PLATE_L / 2 - PLATE_W / 2  # bore center on the +X semicircle (= 35)
+# PLATE_L and THREAD_X are derived after shoe constants below.
 
-# M6 heat-set inserts in plate bottom face (M6 × Ø8 OD × 10 mm long).
-M6_INSERT_OD = 8.0
-M6_INSERT_L = 10.0
-M6_INSERT_HOLE_D = 7.7           # ~0.15 mm interference per side for heat-set
-M6_INSERT_CHAMFER = 0.5          # entry chamfer on plate bottom face
+# M6 captive nut pockets in plate top face.
+M6_NUT_AF = 10.0                 # M6 hex nut across-flats (ISO 4032)
+M6_NUT_T = 5.0                   # M6 hex nut thickness
+M6_NUT_POCKET_AF = 10.2          # pocket AF (0.1 mm clearance per flat)
+M6_NUT_POCKET_T = 5.2            # pocket depth (0.2 mm clearance on thickness)
 
 # ---- 608 bearing (shared) ---- #
 BEARING_OD = 22.0
@@ -91,7 +90,7 @@ SURROUND_FILLET_OUT = 3.4        # bottom outer perimeter of snout (hard limit: 
 SURROUND_FILLET_IN = 0.5         # bit hole bottom edge
 
 # Bearing channel
-SLOT_LEN = 15                    # gives bearing-edge-to-bit-edge gap of 1.25–10.25 mm; cantilever = 19.25 + SLOT_LEN
+SLOT_LEN = 18                    # gives bearing-edge-to-bit-edge gap of 1.25–13.25 mm; cantilever = 19.25 + SLOT_LEN
 SLOT_W = 6.5                     # clears UPPER_STEM1_D=6 + ~0.25/side
 
 # Walls — SLOT_END_WALL and END_WALL_BACK sized so Ø12 countersinks clear the
@@ -123,6 +122,12 @@ STANDOFF_X_INNER = (
 )
 STANDOFF_X_OUTER = STANDOFF_X_INNER - STANDOFF_SPAN
 
+# Plate length: just long enough to span from thread bore (+X semicircle) to
+# past the outer insert with ≥6 mm wall from hole edge.
+PLATE_BACK_WALL = 10             # outer insert centre → plate back edge (≈6 mm from hole edge)
+PLATE_L = SURROUND_X - STANDOFF_X_OUTER + PLATE_W / 2 + PLATE_BACK_WALL
+THREAD_X = PLATE_L / 2 - PLATE_W / 2  # bore centre on the +X semicircle
+
 # ---- bearing housing ---- #
 M4_BOLT_CLEARANCE_D = 4.5
 
@@ -132,6 +137,7 @@ M4_NUT_POCKET_AF = 7.2
 M4_NUT_POCKET_T = 3.5
 
 UPPER_STEM1_D = 6
+UPPER_STEM1_LEN = 9              # X extent of stadium stem; flat sides prevent rotation in slot
 UPPER_TOP_FLANGE_D = 15
 UPPER_TOP_FLANGE_T = 5
 
@@ -142,6 +148,12 @@ LOWER_STEM_L = BEARING_THK       # = 7.0
 
 WASHER_OD = 14
 WASHER_T = 1.5
+
+# ---- standoff ---- #
+STANDOFF_H = 23                  # plate-to-shoe gap (shoe top → plate bottom)
+STANDOFF_WALL = 8                # material around each bolt hole
+STANDOFF_W = M6_BOLT_CLEARANCE_D + 2 * STANDOFF_WALL   # = 22.5 mm
+STANDOFF_HOLE_D = M6_BOLT_CLEARANCE_D + 0.5             # extra clearance for standoff bolt passage
 
 OUT = Path(__file__).parent / "out"
 
@@ -172,22 +184,17 @@ def build_plate():
     )
     plate += Pos(THREAD_X, 0, 0) * thread
 
-    # M6 heat-set insert holes — entered from the plate bottom (z = 0).
-    # Each hole: entry chamfer cone + straight bore for the insert.
+    # M6 captive nut pockets — bolt clearance bore through plate, hex pocket from top.
+    with BuildSketch() as nut_sk:
+        RegularPolygon(radius=M6_NUT_POCKET_AF / math.sqrt(3), side_count=6)
+    m6_nut_pocket = extrude(nut_sk.sketch, amount=M6_NUT_POCKET_T).solids()[0]
     for x in (insert_x_inner, insert_x_outer):
-        # Entry chamfer (cone narrows from chamfer width to insert bore).
-        plate -= Pos(x, 0, -0.1) * Cone(
-            bottom_radius=(M6_INSERT_HOLE_D + 2 * M6_INSERT_CHAMFER) / 2,
-            top_radius=M6_INSERT_HOLE_D / 2,
-            height=M6_INSERT_CHAMFER + 0.1,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-        )
-        # Insert bore: through the full plate thickness.
-        plate -= Pos(x, 0, M6_INSERT_CHAMFER - 0.1) * Cylinder(
-            radius=M6_INSERT_HOLE_D / 2,
+        plate -= Pos(x, 0, -0.1) * Cylinder(
+            radius=M6_BOLT_CLEARANCE_D / 2,
             height=PLATE_T + 0.2,
             align=(Align.CENTER, Align.CENTER, Align.MIN),
         )
+        plate -= Pos(x, 0, PLATE_T - M6_NUT_POCKET_T) * m6_nut_pocket
 
     return plate
 
@@ -272,10 +279,9 @@ def build_shoe():
 
 
 def build_upper_sleeve():
-    body = Cylinder(
-        radius=UPPER_STEM1_D / 2, height=SHOE_T,
-        align=(Align.CENTER, Align.CENTER, Align.MIN),
-    )
+    with BuildSketch() as stem_sk:
+        SlotOverall(UPPER_STEM1_LEN, UPPER_STEM1_D)
+    body = extrude(stem_sk.sketch, amount=SHOE_T)
     body += Pos(0, 0, SHOE_T) * Cylinder(
         radius=UPPER_TOP_FLANGE_D / 2, height=UPPER_TOP_FLANGE_T,
         align=(Align.CENTER, Align.CENTER, Align.MIN),
@@ -323,7 +329,17 @@ def build_washer():
     return body
 
 
-STANDOFF_VIS_H = 50
+def build_standoff():
+    with BuildSketch() as sk:
+        SlotOverall(STANDOFF_SPAN + STANDOFF_W, STANDOFF_W)
+    body = extrude(sk.sketch, amount=STANDOFF_H)
+    for x_off in (STANDOFF_SPAN / 2, -STANDOFF_SPAN / 2):
+        body -= Pos(x_off, 0, -0.1) * Cylinder(
+            radius=STANDOFF_HOLE_D / 2,
+            height=STANDOFF_H + 0.2,
+            align=(Align.CENTER, Align.CENTER, Align.MIN),
+        )
+    return body
 
 
 def main() -> None:
@@ -333,6 +349,7 @@ def main() -> None:
     upper_sleeve = build_upper_sleeve()
     lower_sleeve = build_lower_sleeve()
     washer = build_washer()
+    standoff = build_standoff()
 
     export_step(plate, str(OUT / "plate.step"))
     export_stl(plate, str(OUT / "plate.stl"))
@@ -344,6 +361,8 @@ def main() -> None:
     export_stl(lower_sleeve, str(OUT / "lower_sleeve.stl"))
     export_step(washer, str(OUT / "washer.step"))
     export_stl(washer, str(OUT / "washer.stl"))
+    export_step(standoff, str(OUT / "standoff.step"))
+    export_stl(standoff, str(OUT / "standoff.stl"))
     print(f"Exported: {sorted(p.name for p in OUT.iterdir())}")
 
     # ---- assembly preview ---- #
@@ -364,15 +383,17 @@ def main() -> None:
     lower_z_base = bearing_bottom_z - LOWER_FLANGE_T
     lower_assembled = Pos(bearing_x, 0, lower_z_base) * lower_sleeve
     plate_shoe_offset = SURROUND_X - THREAD_X
-    plate_assembled = Pos(plate_shoe_offset, 0, SHOE_T + STANDOFF_VIS_H) * plate
+    plate_assembled = Pos(plate_shoe_offset, 0, SHOE_T + STANDOFF_H) * plate
+    standoff_x = (STANDOFF_X_INNER + STANDOFF_X_OUTER) / 2
+    standoff_assembled = Pos(standoff_x, 0, SHOE_T) * standoff
 
     try:
         from ocp_vscode import show
         show(
             plate_assembled, shoe, upper_assembled, lower_assembled,
-            washer_assembled, bearing_ghost,
+            washer_assembled, bearing_ghost, standoff_assembled,
             names=["plate", "shoe", "upper_sleeve", "lower_sleeve",
-                   "washer", "bearing"],
+                   "washer", "bearing", "standoff"],
         )
         print("Sent to OCP CAD Viewer.")
     except ImportError:
