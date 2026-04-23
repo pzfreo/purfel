@@ -139,7 +139,7 @@ M4_NUT_POCKET_T = 3.5
 UPPER_STEM1_D = 6
 UPPER_STEM1_LEN = 9              # X extent of stadium stem; flat sides prevent rotation in slot
 UPPER_STEM1_OFFSET = (UPPER_STEM1_LEN - UPPER_STEM1_D) / 2  # stadium shifted -X so hole sits at +X cap centre
-UPPER_TOP_FLANGE_D = 15
+UPPER_TOP_FLANGE_D = 13
 UPPER_TOP_FLANGE_T = 5
 
 LOWER_FLANGE_D = 14
@@ -153,11 +153,18 @@ WASHER_T = 1.5
 # ---- standoff ---- #
 STANDOFF_H = 23                  # plate-to-shoe gap (shoe top → plate bottom)
 STANDOFF_CLEARANCE = 2           # total margin kept from both hard limits (1 mm each end)
-# Width is the smaller of: (a) flush with shoe back wall, (b) clear of upper sleeve flange.
+# Most-negative bearing X: inner stem left cap aligns with outer slot left cap.
+BEARING_X_MIN = (
+    SLOT_X_CENTER
+    - (SLOT_LEN - SLOT_W - (UPPER_STEM1_LEN - UPPER_STEM1_D)) / 2
+    + UPPER_STEM1_OFFSET
+)
+# Width is the smaller of: (a) flush with shoe back wall, (b) clear of upper sleeve flange
+# at maximum bearing-to-bit distance (bearing at −X slot limit).
 STANDOFF_W = min(
-    2 * (SHOE_L / 2 + STANDOFF_X_OUTER),                              # shoe-end limit
-    2 * (SLOT_X_CENTER - UPPER_TOP_FLANGE_D / 2 - STANDOFF_X_INNER), # flange limit
-) - STANDOFF_CLEARANCE           # = 18 mm; wall ≈ 5.75 mm each side
+    2 * (SHOE_L / 2 + STANDOFF_X_OUTER),                                  # shoe-end limit
+    2 * (BEARING_X_MIN - UPPER_TOP_FLANGE_D / 2 - STANDOFF_X_INNER),     # flange limit at max bearing dist
+) - STANDOFF_CLEARANCE           # = 14 mm; wall ≈ 3.5 mm each side
 STANDOFF_HOLE_D = M6_BOLT_CLEARANCE_D + 0.5             # extra clearance for standoff bolt passage
 
 OUT = Path(__file__).parent / "out"
