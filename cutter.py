@@ -50,7 +50,7 @@ from bd_warehouse.thread import IsoThread
 
 # ---- plate ---- #
 PLATE_W = 30
-PLATE_T = 10                     # 5 mm nut pocket + 5 mm solid below
+PLATE_T = 11                     # 5.2 mm nut pocket + 5.8 mm solid below
 
 # Dremel 3/4"-12 UN
 THREAD_MAJOR = 19.05
@@ -77,7 +77,7 @@ COUNTERSINK_DEPTH = 4.0          # head height; flush with shoe bottom (z=0)
 
 # ---- shoe ---- #
 SHOE_W = 30                      # Y, matches PLATE_W
-SHOE_T = 8                       # Z thickness
+SHOE_T = 11                      # Z thickness
 
 # Surround snout (half-stadium): flat back, Ø SURROUND_BOSS_D semicircular front.
 SURROUND_HEIGHT = 4              # Z height of snout (z=0 to z=4)
@@ -168,6 +168,7 @@ STANDOFF_W = min(
 STANDOFF_HOLE_D = M6_BOLT_CLEARANCE_D + 0.5             # extra clearance for standoff bolt passage
 
 OUT = Path(__file__).parent / "out"
+STL_OUT = Path(__file__).parent / "stl"
 
 
 def build_plate():
@@ -358,6 +359,7 @@ def build_standoff():
 
 def main() -> None:
     OUT.mkdir(exist_ok=True)
+    STL_OUT.mkdir(exist_ok=True)
     plate = build_plate()
     shoe = build_shoe()
     upper_sleeve = build_upper_sleeve()
@@ -377,6 +379,13 @@ def main() -> None:
     export_stl(washer, str(OUT / "washer.stl"))
     export_step(standoff, str(OUT / "standoff.step"))
     export_stl(standoff, str(OUT / "standoff.stl"))
+
+    for part, name in [
+        (plate, "plate"), (shoe, "shoe"), (upper_sleeve, "upper_sleeve"),
+        (lower_sleeve, "lower_sleeve"), (washer, "washer"), (standoff, "standoff"),
+    ]:
+        export_stl(part, str(STL_OUT / f"{name}.stl"))
+
     print(f"Exported: {sorted(p.name for p in OUT.iterdir())}")
 
     # ---- assembly preview ---- #
